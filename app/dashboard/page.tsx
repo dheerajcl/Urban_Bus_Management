@@ -71,13 +71,13 @@ export default function Dashboard() {
             Dashboard
           </Link>
           <Link
-            href="#"
+            href="/dashboard/buses"
             className="text-muted-foreground transition-colors hover:text-primary"
           >
             Buses
           </Link>
           <Link
-            href="#"
+            href="/dashboard/routes"
             className="text-muted-foreground transition-colors hover:text-primary"
           >
             Routes
