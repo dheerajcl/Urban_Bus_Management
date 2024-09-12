@@ -56,7 +56,7 @@ export default function LandingPage() {
       <main>
         <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
           <Image
-            src="/app/background2.jpeg"
+            src="/images/background2.jpeg"
             alt="Urban cityscape with buses"
             layout="fill"
             objectFit="cover"
