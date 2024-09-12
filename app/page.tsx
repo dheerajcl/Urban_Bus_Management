@@ -1,16 +1,16 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, Bus, Clock, Users, CreditCard, MapPin, Calendar, Shield } from 'lucide-react'
+import { Search, Bus, Clock, Users, CreditCard, MapPin, Calendar, Shield, Wifi, Coffee, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { motion } from 'framer-motion'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar as CalendarIcon } from 'lucide-react'
-import { Calendar as MainCalendar } from '@/components/ui/calendar'
+import { Calendar as MainCalendar} from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 
@@ -27,6 +27,15 @@ export default function LandingPage() {
   const [destination, setDestination] = useState('')
   const [date, setDate] = useState<Date>()
   const [busResults, setBusResults] = useState<BusResult[]>([])
+  const [userLocation, setUserLocation] = useState<string | null>(null)
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        setUserLocation(`Lat: ${position.coords.latitude.toFixed(2)}, Long: ${position.coords.longitude.toFixed(2)}`)
+      })
+    }
+  }, [])
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +54,7 @@ export default function LandingPage() {
         <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
           <Link href="/" className="flex items-center space-x-2">
             <Bus className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">Urban Bus</span>
+            <span className="text-xl font-bold">Swift Commute</span>
           </Link>
           <Link href="/login">
             <Button variant="outline">Admin Login</Button>
@@ -54,37 +63,37 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
           <Image
             src="/images/background2.jpeg"
-            alt="Urban cityscape with buses"
+            alt="Urban cityscape with buses at night"
             layout="fill"
             objectFit="cover"
             className="absolute inset-0 z-0"
           />
-          <div className="absolute inset-0 bg-black/50 z-1"></div>
-          <div className="relative z-2 text-center text-white">
+          <div className="absolute inset-0 bg-black/60 z-1"></div>
+          <div className="relative z-2 text-center px-4 w-full max-w-6xl">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-5xl font-bold mb-4"
+              className="text-6xl md:text-7xl mb-6 text-primary"
             >
-              Find Your Perfect Journey
+              Your Journey, Our Priority
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-xl mb-8"
+              className="text-2xl mb-12 text-muted-foreground"
             >
-              Discover comfortable and affordable bus travel options
+              Discover comfortable and affordable bus travel options across the city
             </motion.p>
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="max-w-4xl mx-auto"
+              className="w-full max-w-4xl mx-auto"
             >
               <Card>
                 <CardContent className="p-6">
@@ -140,53 +149,77 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
             </motion.div>
+            {userLocation && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+                className="mt-4 text-muted-foreground"
+              >
+                Your current location: {userLocation}
+              </motion.p>
+            )}
           </div>
         </section>
 
-        <section className="py-16 bg-secondary/10">
+        <section className="py-24 bg-secondary/10">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-12 text-center">Why Choose Urban Bus?</h2>
-            <div className="grid gap-8 md:grid-cols-3">
-              {[
-                { icon: Bus, title: "Modern Fleet", description: "Travel in comfort with our state-of-the-art buses" },
-                { icon: Clock, title: "Punctual Service", description: "Reliable schedules to get you to your destination on time" },
-                { icon: Shield, title: "Safe Travel", description: "Your safety is our top priority with regular maintenance and trained staff" }
-              ].map((feature, index) => (
-                <motion.div
-                  key={index}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Card className="h-full">
-                    <CardContent className="p-6 flex flex-col items-center text-center">
-                      <feature.icon className="h-12 w-12 mb-4 text-primary" />
-                      <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                      <p>{feature.description}</p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+            <h2 className="text-4xl font-bold mb-16 text-center text-primary">Features for a Seamless Journey</h2>
+            <div className="grid gap-12 md:grid-cols-3">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center text-center"
+              >
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                  <Wifi className="h-10 w-10 text-primary" />
+                </div>
+                <h3 className="text-2xl font-semibold mb-4">Free Wi-Fi</h3>
+                <p className="text-muted-foreground">Stay connected throughout your journey with our complimentary high-speed Wi-Fi service.</p>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center text-center"
+              >
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                  <Coffee className="h-10 w-10 text-primary" />
+                </div>
+                <h3 className="text-2xl font-semibold mb-4">Onboard Refreshments</h3>
+                <p className="text-muted-foreground">Enjoy a variety of snacks and beverages available for purchase during your trip.</p>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center text-center"
+              >
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                  <Smartphone className="h-10 w-10 text-primary" />
+                </div>
+                <h3 className="text-2xl font-semibold mb-4">Real-time Tracking</h3>
+                <p className="text-muted-foreground">Track your bus in real-time and receive updates on estimated arrival times.</p>
+              </motion.div>
             </div>
           </div>
         </section>
 
         {busResults.length > 0 && (
-          <section className="py-16">
+          <section className="py-24">
             <div className="container mx-auto px-4">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
               >
-                <h2 className="text-3xl font-bold mb-8 text-center">Available Buses</h2>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <h2 className="text-4xl font-bold mb-16 text-center text-primary">Available Buses</h2>
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                   {busResults.map((bus) => (
                     <motion.div
                       key={bus.id}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Card className="h-full">
+                      <Card>
                         <CardHeader>
                           <CardTitle className="flex items-center">
                             <Bus className="mr-2 h-5 w-5 text-primary" />
@@ -215,63 +248,35 @@ export default function LandingPage() {
             </div>
           </section>
         )}
-
-        <section className="py-16 bg-secondary/10">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-8 text-center">How It Works</h2>
-            <div className="grid gap-8 md:grid-cols-4">
-              {[
-                { icon: Search, title: "Search", description: "Enter your route and date" },
-                { icon: Bus, title: "Choose", description: "Select from available buses" },
-                { icon: CreditCard, title: "Book", description: "Secure your seat with easy payment" },
-                { icon: Calendar, title: "Travel", description: "Enjoy your comfortable journey" }
-              ].map((step, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex flex-col items-center text-center"
-                >
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <step.icon className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                  <p>{step.description}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
       </main>
 
-      <footer className="bg-secondary/10 py-8">
+      <footer className="bg-secondary/10 py-12">
         <div className="container mx-auto px-4">
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-12 md:grid-cols-3">
             <div>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2">
-                <li><Link href="#" className="hover:text-primary">About Us</Link></li>
-                <li><Link href="#" className="hover:text-primary">Contact</Link></li>
-                <li><Link href="#" className="hover:text-primary">FAQs</Link></li>
+              <h3 className="text-xl font-semibold mb-6 font-serif">Quick Links</h3>
+              <ul className="space-y-4">
+                <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
+                <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Contact</Link></li>
+                <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">FAQs</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
-              <p>Email: info@urbanbus.com</p>
-              <p>Phone: +1 (123) 456-7890</p>
+              <h3 className="text-xl font-semibold mb-6 font-serif">Contact Us</h3>
+              <p className="text-muted-foreground mb-2">Email: info@swiftcommute.com</p>
+              <p className="text-muted-foreground">Phone: +1 (123) 456-7890</p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Follow Us</h3>
-              <div className="flex space-x-4">
-                <Link href="#" className="hover:text-primary">Facebook</Link>
-                <Link href="#" className="hover:text-primary">Twitter</Link>
-                <Link href="#" className="hover:text-primary">Instagram</Link>
+              <h3 className="text-xl font-semibold mb-6 font-serif">Follow Us</h3>
+              <div className="flex space-x-6">
+                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Facebook</Link>
+                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Twitter</Link>
+                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Instagram</Link>
               </div>
             </div>
           </div>
-          <div className="mt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; 2024 Urban Bus Management. All rights reserved.</p>
+          <div className="mt-12 text-center text-sm text-muted-foreground">
+            <p>&copy; 2024 Swift Commute. All rights reserved.</p>
           </div>
         </div>
       </footer>
