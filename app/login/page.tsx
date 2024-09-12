@@ -66,11 +66,11 @@ export default function LoginPage() {
       </div>
       <div className="hidden bg-muted lg:block">
         <Image
-          src="/placeholder.svg?height=800&width=1200"
+          src="/images/background.jpeg"
           alt="Urban Bus Management"
           width={1200}
           height={800}
-          className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+          className="h-full w-full object-cover"
         />
       </div>
     </div>
