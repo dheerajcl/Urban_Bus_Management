@@ -3,14 +3,13 @@
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, Bus, Clock, Users, CreditCard, MapPin, Calendar, Shield, Wifi, Coffee, Smartphone } from 'lucide-react'
+import { Search, Bus, Clock, Users, CreditCard, MapPin, Calendar as CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Calendar as CalendarIcon } from 'lucide-react'
-import { Calendar as MainCalendar} from '@/components/ui/calendar'
+import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 
@@ -39,7 +38,6 @@ export default function LandingPage() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    // In a real application, this would be an API call
     const mockResults: BusResult[] = [
       { id: 1, type: 'Express', price: '₹500', capacity: 40, departureTime: '10:00 AM' },
       { id: 2, type: 'Deluxe', price: '₹750', capacity: 35, departureTime: '11:30 AM' },
@@ -49,37 +47,38 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
+    <div className="min-h-screen bg-background text-foreground font-sans">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
           <Link href="/" className="flex items-center space-x-2">
             <Bus className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">Swift Commute</span>
+            <span className="text-xl font-semibold">Swift Commute</span>
           </Link>
           <Link href="/login">
-            <Button variant="outline">Admin Login</Button>
+            <Button variant="ghost" className="text-primary hover:text-primary/80 transition-colors">Admin Login</Button>
           </Link>
         </nav>
       </header>
 
       <main>
-        <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-          <Image
-            src="/images/background2.jpeg"
-            alt="Urban cityscape with buses at night"
-            layout="fill"
-            objectFit="cover"
-            className="absolute inset-0 z-0"
-          />
-          <div className="absolute inset-0 bg-black/60 z-1"></div>
-          <div className="relative z-2 text-center px-4 w-full max-w-6xl">
+        <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden py-20">
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="/images/background2.jpeg"
+              alt="Urban cityscape with buses at night"
+              layout="fill"
+              objectFit="cover"
+              className="opacity-30"
+            />
+          </div>
+          <div className="relative z-10 text-center px-4 w-full max-w-6xl">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-6xl md:text-7xl mb-6 text-primary"
+              className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 font sans"
             >
-              Your Journey, Our Priority
+              Your Journey, Reimagined
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -87,7 +86,7 @@ export default function LandingPage() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-2xl mb-12 text-muted-foreground"
             >
-              Discover comfortable and affordable bus travel options across the city
+              Experience city travel like never before
             </motion.p>
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -95,7 +94,7 @@ export default function LandingPage() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="w-full max-w-4xl mx-auto"
             >
-              <Card>
+              <Card className="bg-card/80 backdrop-blur-md shadow-lg">
                 <CardContent className="p-6">
                   <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
                     <div className="flex-1 relative">
@@ -105,7 +104,7 @@ export default function LandingPage() {
                         placeholder="From"
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 bg-input border-input"
                       />
                     </div>
                     <div className="flex-1 relative">
@@ -115,7 +114,7 @@ export default function LandingPage() {
                         placeholder="To"
                         value={destination}
                         onChange={(e) => setDestination(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 bg-input border-input"
                       />
                     </div>
                     <div className="flex-1">
@@ -133,7 +132,7 @@ export default function LandingPage() {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <MainCalendar
+                          <Calendar
                             mode="single"
                             selected={date}
                             onSelect={setDate}
@@ -162,56 +161,17 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-24 bg-secondary/10">
-          <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-bold mb-16 text-center text-primary">Features for a Seamless Journey</h2>
-            <div className="grid gap-12 md:grid-cols-3">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center text-center"
-              >
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                  <Wifi className="h-10 w-10 text-primary" />
-                </div>
-                <h3 className="text-2xl font-semibold mb-4">Free Wi-Fi</h3>
-                <p className="text-muted-foreground">Stay connected throughout your journey with our complimentary high-speed Wi-Fi service.</p>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center text-center"
-              >
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                  <Coffee className="h-10 w-10 text-primary" />
-                </div>
-                <h3 className="text-2xl font-semibold mb-4">Onboard Refreshments</h3>
-                <p className="text-muted-foreground">Enjoy a variety of snacks and beverages available for purchase during your trip.</p>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center text-center"
-              >
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                  <Smartphone className="h-10 w-10 text-primary" />
-                </div>
-                <h3 className="text-2xl font-semibold mb-4">Real-time Tracking</h3>
-                <p className="text-muted-foreground">Track your bus in real-time and receive updates on estimated arrival times.</p>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {busResults.length > 0 && (
-          <section className="py-24">
-            <div className="container mx-auto px-4">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-              >
-                <h2 className="text-4xl font-bold mb-16 text-center text-primary">Available Buses</h2>
+        <AnimatePresence>
+          {busResults.length > 0 && (
+            <motion.section
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              transition={{ duration: 0.5 }}
+              className="py-24 bg-background"
+            >
+              <div className="container mx-auto px-4">
+                <h2 className="text-4xl font-bold mb-16 text-center text-foreground">Available Buses</h2>
                 <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                   {busResults.map((bus) => (
                     <motion.div
@@ -219,23 +179,23 @@ export default function LandingPage() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Card>
+                      <Card className="bg-card border-border shadow-lg hover:shadow-xl transition-shadow">
                         <CardHeader>
-                          <CardTitle className="flex items-center">
+                          <CardTitle className="flex items-center text-foreground">
                             <Bus className="mr-2 h-5 w-5 text-primary" />
                             {bus.type} Bus
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <div className="flex items-center mb-2">
+                          <div className="flex items-center mb-2 text-foreground">
                             <CreditCard className="mr-2 h-4 w-4 text-primary" />
                             <span>Price: {bus.price}</span>
                           </div>
-                          <div className="flex items-center mb-2">
+                          <div className="flex items-center mb-2 text-foreground">
                             <Users className="mr-2 h-4 w-4 text-primary" />
                             <span>Capacity: {bus.capacity} seats</span>
                           </div>
-                          <div className="flex items-center">
+                          <div className="flex items-center text-foreground">
                             <Clock className="mr-2 h-4 w-4 text-primary" />
                             <span>Departure: {bus.departureTime}</span>
                           </div>
@@ -244,17 +204,44 @@ export default function LandingPage() {
                     </motion.div>
                   ))}
                 </div>
-              </motion.div>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        <section className="py-24 bg-secondary/10">
+          <div className="container mx-auto px-4">
+            <h2 className="text-4xl font-bold mb-16 text-center text-foreground">Features for a Seamless Journey</h2>
+            <div className="grid gap-12 md:grid-cols-3">
+              {[
+                { icon: Bus, title: "Modern Fleet", description: "Travel in comfort with our state-of-the-art buses" },
+                { icon: Clock, title: "Punctual Service", description: "Reliable schedules to get you to your destination on time" },
+                { icon: Users, title: "Customer-Centric", description: "Exceptional service tailored to your needs" }
+              ].map((feature, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="flex flex-col items-center text-center"
+                >
+                  <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6">
+                    <feature.icon className="h-10 w-10 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-semibold mb-4 text-foreground">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
+                </motion.div>
+              ))}
             </div>
-          </section>
-        )}
+          </div>
+        </section>
       </main>
 
-      <footer className="bg-secondary/10 py-12">
+      <footer className="bg-background py-12 border-t border-border">
         <div className="container mx-auto px-4">
           <div className="grid gap-12 md:grid-cols-3">
             <div>
-              <h3 className="text-xl font-semibold mb-6 font-serif">Quick Links</h3>
+              <h3 className="text-xl font-semibold mb-6 text-foreground">Quick Links</h3>
               <ul className="space-y-4">
                 <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
                 <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Contact</Link></li>
@@ -262,12 +249,12 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-6 font-serif">Contact Us</h3>
+              <h3 className="text-xl font-semibold mb-6 text-foreground">Contact Us</h3>
               <p className="text-muted-foreground mb-2">Email: info@swiftcommute.com</p>
               <p className="text-muted-foreground">Phone: +1 (123) 456-7890</p>
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-6 font-serif">Follow Us</h3>
+              <h3 className="text-xl font-semibold mb-6 text-foreground">Follow Us</h3>
               <div className="flex space-x-6">
                 <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Facebook</Link>
                 <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Twitter</Link>
