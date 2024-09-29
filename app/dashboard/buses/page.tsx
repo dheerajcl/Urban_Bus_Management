@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Search, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,54 +35,96 @@ type Bus = {
   type: string
   capacity: number
   status: 'Active' | 'Maintenance' | 'Out of Service'
-  lastMaintenance: string
-  fuelEfficiency: number
+  last_maintenance: string
+  fuel_efficiency: number
   description: string
 }
 
 export default function BusesPage() {
-  const [buses, setBuses] = useState<Bus[]>([
-    {
-      id: '1',
-      number: 'BUS001',
-      type: 'Standard',
-      capacity: 40,
-      status: 'Active',
-      lastMaintenance: '2023-05-15',
-      fuelEfficiency: 8.5,
-      description: 'Standard city bus with air conditioning and wheelchair access.'
-    },
-    // Add more mock buses here
-  ])
+  const [buses, setBuses] = useState<Bus[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [newBus, setNewBus] = useState<Omit<Bus, 'id'>>({
     number: '',
     type: 'Standard',
     capacity: 40,
     status: 'Active',
-    lastMaintenance: '',
-    fuelEfficiency: 0,
+    last_maintenance: '',
+    fuel_efficiency: 0,
     description: ''
   })
 
-  const handleAddBus = () => {
-    const id = (buses.length + 1).toString()
-    setBuses([...buses, { ...newBus, id }])
-    setIsAddDialogOpen(false)
-    setNewBus({
-      number: '',
-      type: 'Standard',
-      capacity: 40,
-      status: 'Active',
-      lastMaintenance: '',
-      fuelEfficiency: 0,
-      description: ''
-    })
+  useEffect(() => {
+    fetchBuses()
+  }, [])
+
+  const fetchBuses = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/buses')
+      if (!response.ok) {
+        throw new Error('Failed to fetch buses')
+      }
+      const data = await response.json()
+      setBuses(data)
+      setError(null)
+    } catch (error) {
+      console.error('Error fetching buses:', error)
+      setError('Failed to fetch buses. Please try again later.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleDeleteBus = (id: string) => {
-    setBuses(buses.filter(bus => bus.id !== id))
+  const handleAddBus = async () => {
+    try {
+      const response = await fetch('/api/buses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newBus),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to add bus')
+      }
+      const addedBus = await response.json()
+      setBuses([...buses, addedBus])
+      setIsAddDialogOpen(false)
+      setNewBus({
+        number: '',
+        type: 'Standard',
+        capacity: 40,
+        status: 'Active',
+        last_maintenance: '',
+        fuel_efficiency: 0,
+        description: ''
+      })
+    } catch (error) {
+      console.error('Error adding bus:', error)
+      setError('Failed to add bus. Please try again.')
+    }
+  }
+
+  const handleDeleteBus = async (id: string) => {
+    try {
+      const response = await fetch('/api/buses', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete bus')
+      }
+      setBuses(buses.filter(bus => bus.id !== id))
+    } catch (error) {
+      console.error('Error deleting bus:', error)
+      setError('Failed to delete bus. Please try again.')
+    }
   }
 
   const filteredBuses = buses.filter(bus =>
@@ -90,6 +132,14 @@ export default function BusesPage() {
     bus.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
     bus.status.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  if (loading) {
+    return <div>Loading buses...</div>
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>
+  }
 
   return (
     <div className="p-6">
@@ -174,8 +224,8 @@ export default function BusesPage() {
                 <Input
                   id="lastMaintenance"
                   type="date"
-                  value={newBus.lastMaintenance}
-                  onChange={(e) => setNewBus({ ...newBus, lastMaintenance: e.target.value })}
+                  value={newBus.last_maintenance}
+                  onChange={(e) => setNewBus({ ...newBus, last_maintenance: e.target.value })}
                 />
               </div>
               <div>
@@ -184,8 +234,8 @@ export default function BusesPage() {
                   id="fuelEfficiency"
                   type="number"
                   step="0.1"
-                  value={newBus.fuelEfficiency}
-                  onChange={(e) => setNewBus({ ...newBus, fuelEfficiency: parseFloat(e.target.value) })}
+                  value={newBus.fuel_efficiency}
+                  onChange={(e) => setNewBus({ ...newBus, fuel_efficiency: parseFloat(e.target.value) })}
                 />
               </div>
               <div>
@@ -229,8 +279,8 @@ export default function BusesPage() {
                   {bus.status}
                 </span>
               </TableCell>
-              <TableCell>{bus.lastMaintenance}</TableCell>
-              <TableCell>{bus.fuelEfficiency} km/L</TableCell>
+              <TableCell>{bus.last_maintenance}</TableCell>
+              <TableCell>{bus.fuel_efficiency} km/L</TableCell>
               <TableCell>
                 <div className="flex space-x-2">
                   <Button variant="outline" size="sm">
