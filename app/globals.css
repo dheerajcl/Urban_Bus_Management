@@ -99,3 +99,60 @@ body {
 .no-wrap {
   white-space: nowrap;
 }
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Add responsive container class */
+  .container-responsive {
+    @apply w-full mx-auto px-4;
+    max-width: 100%;
+  }
+
+  @screen sm {
+    .container-responsive {
+      max-width: 640px;
+    }
+  }
+
+  @screen md {
+    .container-responsive {
+      max-width: 768px;
+    }
+  }
+
+  @screen lg {
+    .container-responsive {
+      max-width: 1024px;
+    }
+  }
+
+  @screen xl {
+    .container-responsive {
+      max-width: 1280px;
+    }
+  }
+}
+
+
+html {
+  font-size: 16px;
+}
+
+@media screen and (max-width: 1024px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  html {
+    font-size: 12px;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}

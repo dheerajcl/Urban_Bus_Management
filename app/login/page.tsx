@@ -1,6 +1,5 @@
 'use client'
 
-import Image from "next/image"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -27,18 +26,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full lg:grid lg:min-h-[600px] lg:grid-cols-2 xl:min-h-[800px]">
-      <div className="flex items-center justify-center py-12">
-        <div className="mx-auto grid w-[350px] gap-6">
+    <div className="relative flex items-center justify-center min-h-screen w-full bg-cover bg-center" style={{ backgroundImage: "url('/images/background.jpeg')" }}>
+      <div className="absolute inset-0 bg-black opacity-50"></div>
+      <div className="relative z-10 w-full max-w-md p-6 bg-background/80 backdrop-blur-md rounded-lg shadow-xl">
+        <div className="grid gap-6">
           <div className="grid gap-2 text-center">
-            <h1 className="text-3xl font-bold">Login</h1>
+            <h1 className="text-3xl font-bold text-foreground">Login</h1>
             <p className="text-balance text-muted-foreground">
               Enter your email below to login to your account
             </p>
           </div>
           <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-foreground">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -46,16 +46,18 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="bg-background/50 text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-foreground">Password</Label>
               <Input
                 id="password"
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="bg-background/50 text-foreground"
               />
             </div>
             <Button type="submit" className="w-full">
@@ -63,15 +65,6 @@ export default function LoginPage() {
             </Button>
           </form>
         </div>
-      </div>
-      <div className="hidden bg-muted lg:block">
-        <Image
-          src="/images/background.jpeg"
-          alt="Urban Bus Management"
-          width={1200}
-          height={800}
-          className="h-full w-full object-cover"
-        />
       </div>
     </div>
   )
