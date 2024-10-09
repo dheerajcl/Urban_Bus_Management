@@ -5,67 +5,69 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAuth } from "@/lib/auth"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
   const router = useRouter()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const response = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-    if (response.ok) {
-      router.push('/dashboard')
-    } else {
-      alert('Login failed')
+    setError("")
+    try {
+      const success = await login(username, password)
+      if (success) {
+        router.push('/dashboard')
+      } else {
+        setError("Invalid username or password")
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      setError("An unexpected error occurred. Please try again.")
     }
   }
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen w-full bg-cover bg-center" style={{ backgroundImage: "url('/images/background.jpeg')" }}>
-      <div className="absolute inset-0 bg-black opacity-50"></div>
-      <div className="relative z-10 w-full max-w-md p-6 bg-background/80 backdrop-blur-md rounded-lg shadow-xl">
-        <div className="grid gap-6">
-          <div className="grid gap-2 text-center">
-            <h1 className="text-3xl font-bold text-foreground">Login</h1>
-            <p className="text-balance text-muted-foreground">
-              Enter your email below to login to your account
-            </p>
-          </div>
-          <form onSubmit={handleSubmit} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email" className="text-foreground">Email</Label>
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Card className="w-[350px]">
+        <CardHeader>
+          <CardTitle>Login</CardTitle>
+          <CardDescription>Enter your credentials to access the system</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
+                id="username"
+                type="text"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-background/50 text-foreground placeholder:text-muted-foreground"
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password" className="text-foreground">Password</Label>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
-                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-background/50 text-foreground"
+                required
               />
             </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full">
               Login
             </Button>
           </form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

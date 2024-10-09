@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link"
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { Bus, Search, CircleUser, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/lib/auth"
+import { useEffect } from "react"
 
 export default function DashboardLayout({
   children,
@@ -21,11 +23,24 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const { user, logout } = useAuth()
 
-  const handleLogout = () => {
-    // Implement logout logic here
-    // For now, we'll just redirect to the login page
+  useEffect(() => {
+    if (!user) {
+      router.push('/login')
+    }
+  }, [user, router])
+
+  const handleLogout = async () => {
+    await logout()
     router.push('/login')
+  }
+
+  const isActive = (path: string) => pathname === path
+
+  if (!user) {
+    return null // or a loading spinner
   }
 
   return (
@@ -40,31 +55,41 @@ export default function DashboardLayout({
           </Link>
           <Link
             href="/dashboard"
-            className="text-foreground transition-colors hover:text-primary"
+            className={`transition-colors hover:text-primary ${
+              isActive('/dashboard') ? 'text-primary font-semibold' : 'text-muted-foreground'
+            }`}
           >
             Dashboard
           </Link>
           <Link
             href="/dashboard/buses"
-            className="text-muted-foreground transition-colors hover:text-primary"
+            className={`transition-colors hover:text-primary ${
+              isActive('/dashboard/buses') ? 'text-primary font-semibold' : 'text-muted-foreground'
+            }`}
           >
             Buses
           </Link>
           <Link
             href="/dashboard/routes"
-            className="text-muted-foreground transition-colors hover:text-primary"
+            className={`transition-colors hover:text-primary ${
+              isActive('/dashboard/routes') ? 'text-primary font-semibold' : 'text-muted-foreground'
+            }`}
           >
             Routes
           </Link>
           <Link
             href="/dashboard/staff"
-            className="text-muted-foreground transition-colors hover:text-primary"
+            className={`transition-colors hover:text-primary ${
+              isActive('/dashboard/staff') ? 'text-primary font-semibold' : 'text-muted-foreground'
+            }`}
           >
             Staff
           </Link>
           <Link
             href="/dashboard/reports"
-            className="text-muted-foreground transition-colors hover:text-primary"
+            className={`transition-colors hover:text-primary ${
+              isActive('/dashboard/reports') ? 'text-primary font-semibold' : 'text-muted-foreground'
+            }`}
           >
             Reports
           </Link>
@@ -89,30 +114,43 @@ export default function DashboardLayout({
                 <Bus className="h-6 w-6" />
                 <span>Urban Bus Management</span>
               </Link>
-              <Link href="/dashboard" className="hover:text-primary">
+              <Link
+                href="/dashboard"
+                className={`hover:text-primary ${
+                  isActive('/dashboard') ? 'text-primary font-semibold' : ''
+                }`}
+              >
                 Dashboard
               </Link>
               <Link
                 href="/dashboard/buses"
-                className="text-muted-foreground hover:text-primary"
+                className={`hover:text-primary ${
+                  isActive('/dashboard/buses') ? 'text-primary font-semibold' : 'text-muted-foreground'
+                }`}
               >
                 Buses
               </Link>
               <Link
                 href="/dashboard/routes"
-                className="text-muted-foreground hover:text-primary"
+                className={`hover:text-primary ${
+                  isActive('/dashboard/routes') ? 'text-primary font-semibold' : 'text-muted-foreground'
+                }`}
               >
                 Routes
               </Link>
               <Link
                 href="/dashboard/staff"
-                className="text-muted-foreground hover:text-primary"
+                className={`hover:text-primary ${
+                  isActive('/dashboard/staff') ? 'text-primary font-semibold' : 'text-muted-foreground'
+                }`}
               >
                 Staff
               </Link>
               <Link
                 href="/dashboard/reports"
-                className="text-muted-foreground hover:text-primary"
+                className={`hover:text-primary ${
+                  isActive('/dashboard/reports') ? 'text-primary font-semibold' : 'text-muted-foreground'
+                }`}
               >
                 Reports
               </Link>
@@ -138,7 +176,7 @@ export default function DashboardLayout({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Depot Officer</DropdownMenuLabel>
+              <DropdownMenuLabel>{user.role}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/profile">Profile</Link>
