@@ -150,7 +150,7 @@ export default async function Dashboard() {
               <div key={index} className="flex items-center gap-4">
                 <Avatar className="h-9 w-9">
                   <AvatarImage src="/placeholder.svg?height=36&width=36" alt="Avatar" />
-                  <AvatarFallback>{staff.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  <AvatarFallback>{staff.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
                 </Avatar>
                 <div className="grid gap-1">
                   <p className="text-sm font-medium leading-none">{staff.name}</p>
