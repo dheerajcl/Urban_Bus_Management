@@ -2,9 +2,9 @@
 
 import Link from "next/link"
 import { useRouter, usePathname } from 'next/navigation'
-import { Bus, Search, CircleUser, Menu } from "lucide-react"
+import { Bus, CircleUser, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+// import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
   DropdownMenu,
