@@ -1,7 +1,8 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import { Loader } from 'lucide-react' // Importing the loader from ShadCN
 
 interface User {
   username: string
@@ -12,21 +13,27 @@ interface AuthContextType {
   user: User | null
   login: (username: string, password: string) => Promise<boolean>
   logout: () => void
+  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true) // Track loading state
   const router = useRouter()
 
   useEffect(() => {
-    // Check if user is logged in on initial load
     const storedUser = localStorage.getItem('user')
+
     if (storedUser) {
       setUser(JSON.parse(storedUser))
+    } else {
+      router.push('/login') // Redirect to login if no user is found
     }
-  }, [])
+
+    setLoading(false) // Stop loading once the check is complete
+  }, [router])
 
   const login = async (username: string, password: string) => {
     try {
@@ -56,8 +63,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/login')
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader className="animate-spin" size={40} /> {/* Spinner */}
+      </div>
+    )
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )
