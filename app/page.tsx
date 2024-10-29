@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Search, Bus, Clock, Users, CreditCard, MapPin, Calendar as CalendarIcon } from 'lucide-react'
@@ -18,7 +18,10 @@ type BusResult = {
   type: string
   price: string
   capacity: number
-  departureTime: string
+  departure_time: string
+  arrival_time: string
+  route_name: string
+  available_seats: number
 }
 
 export default function LandingPage() {
@@ -26,24 +29,40 @@ export default function LandingPage() {
   const [destination, setDestination] = useState('')
   const [date, setDate] = useState<Date>()
   const [busResults, setBusResults] = useState<BusResult[]>([])
-  const [userLocation, setUserLocation] = useState<string | null>(null)
-
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(function(position) {
-        setUserLocation(`Lat: ${position.coords.latitude.toFixed(2)}, Long: ${position.coords.longitude.toFixed(2)}`)
-      })
-    }
-  }, [])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [searchAttempted, setSearchAttempted] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    const mockResults: BusResult[] = [
-      { id: 1, type: 'Express', price: '₹500', capacity: 40, departureTime: '10:00 AM' },
-      { id: 2, type: 'Deluxe', price: '₹750', capacity: 35, departureTime: '11:30 AM' },
-      { id: 3, type: 'Sleeper', price: '₹1000', capacity: 30, departureTime: '09:00 PM' },
-    ]
-    setBusResults(mockResults)
+    if (!source || !destination || !date) {
+      setError('Please fill in all fields')
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    setSearchAttempted(true);
+
+    const searchParams = new URLSearchParams({
+      source,
+      destination,
+      date: format(date, 'yyyy-MM-dd')
+    })
+
+    try {
+      const response = await fetch(`/api/search-buses?${searchParams}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch bus results')
+      }
+      const data = await response.json()
+      setBusResults(data)
+    } catch (error) {
+      console.error('Search buses error:', error)
+      setError('An error occurred while searching for buses. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -61,11 +80,11 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden py-20">
+        <section className="relative min-h-[calc(100vh-80px)] flex flex-col items-center justify-center overflow-hidden py-20">
           <div className="absolute inset-0 z-0">
             <Image
               src="/images/background2.jpeg"
-              alt="Urban cityscape with buses at night"
+              alt="Urban cityscape with buses"
               layout="fill"
               objectFit="cover"
               className="opacity-30"
@@ -76,7 +95,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 font sans"
+              className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60"
             >
               Your Journey, Reimagined
             </motion.h1>
@@ -141,23 +160,28 @@ export default function LandingPage() {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <Button type="submit" className="w-full md:w-auto">
-                      <Search className="mr-2 h-4 w-4" /> Search Buses
+                    <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
+                      {isLoading ? (
+                        <span className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Searching...
+                        </span>
+                      ) : (
+                        <>
+                          <Search className="mr-2 h-4 w-4" /> Search Buses
+                        </>
+                      )}
                     </Button>
                   </form>
+                  {error && (
+                    <p className="mt-4 text-red-500 text-center">{error}</p>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
-            {userLocation && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1 }}
-                className="mt-4 text-muted-foreground"
-              >
-                Your current location: {userLocation}
-              </motion.p>
-            )}
           </div>
         </section>
 
@@ -189,16 +213,25 @@ export default function LandingPage() {
                         <CardContent>
                           <div className="flex items-center mb-2 text-foreground">
                             <CreditCard className="mr-2 h-4 w-4 text-primary" />
-                            <span>Price: {bus.price}</span>
+                            <span>Price: ₹{bus.price}</span>
                           </div>
                           <div className="flex items-center mb-2 text-foreground">
                             <Users className="mr-2 h-4 w-4 text-primary" />
-                            <span>Capacity: {bus.capacity} seats</span>
+                            <span>Available Seats: {bus.available_seats}/{bus.capacity}</span>
+                          </div>
+                          <div className="flex items-center mb-2 text-foreground">
+                            <Clock className="mr-2 h-4 w-4 text-primary" />
+                            <span>Departure: {new Date(bus.departure_time).toLocaleTimeString()}</span>
+                          </div>
+                          <div className="flex items-center mb-2 text-foreground">
+                            <Clock className="mr-2 h-4 w-4 text-primary" />
+                            <span>Arrival: {new Date(bus.arrival_time).toLocaleTimeString()}</span>
                           </div>
                           <div className="flex items-center text-foreground">
-                            <Clock className="mr-2 h-4 w-4 text-primary" />
-                            <span>Departure: {bus.departureTime}</span>
+                            <MapPin className="mr-2 h-4 w-4 text-primary" />
+                            <span>{bus.route_name}</span>
                           </div>
+                          <Button className="w-full mt-4">Book Now</Button>
                         </CardContent>
                       </Card>
                     </motion.div>
@@ -209,32 +242,15 @@ export default function LandingPage() {
           )}
         </AnimatePresence>
 
-        <section className="py-24 bg-secondary/10">
-          <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-bold mb-16 text-center text-foreground">Features for a Seamless Journey</h2>
-            <div className="grid gap-12 md:grid-cols-3">
-              {[
-                { icon: Bus, title: "Modern Fleet", description: "Travel in comfort with our state-of-the-art buses" },
-                { icon: Clock, title: "Punctual Service", description: "Reliable schedules to get you to your destination on time" },
-                { icon: Users, title: "Customer-Centric", description: "Exceptional service tailored to your needs" }
-              ].map((feature, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex flex-col items-center text-center"
-                >
-                  <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6">
-                    <feature.icon className="h-10 w-10 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-4 text-foreground">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+        {busResults.length === 0 && !isLoading && searchAttempted && (
+            <section className="py-24 bg-background">
+              <div className="container mx-auto px-4 text-center">
+                <h2 className="text-2xl font-bold mb-4 text-foreground">No buses found</h2>
+                <p className="text-muted-foreground">Try adjusting your search criteria or selecting a different date.</p>
+              </div>
+            </section>
+          )}
+
       </main>
 
       <footer className="bg-background py-12 border-t border-border">
