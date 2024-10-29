@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Search, AlertTriangle } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -27,34 +27,32 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type Bus = {
-  id: string
-  number: string
+  id: number
+  bus_number: string
   type: string
   capacity: number
-  status: 'Active' | 'Maintenance' | 'Out of Service'
   last_maintenance: string
-  fuel_efficiency: number
-  description: string
+  next_maintenance: string
 }
 
 export default function BusesPage() {
   const [buses, setBuses] = useState<Bus[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [newBus, setNewBus] = useState<Omit<Bus, 'id'>>({
-    number: '',
-    type: 'Standard',
+    bus_number: '',
+    type: 'Express',
     capacity: 40,
-    status: 'Active',
     last_maintenance: '',
-    fuel_efficiency: 0,
-    description: ''
+    next_maintenance: ''
   })
+  const [editingBus, setEditingBus] = useState<Bus | null>(null)
 
   useEffect(() => {
     fetchBuses()
@@ -94,13 +92,11 @@ export default function BusesPage() {
       setBuses([...buses, addedBus])
       setIsAddDialogOpen(false)
       setNewBus({
-        number: '',
-        type: 'Standard',
+        bus_number: '',
+        type: 'Express',
         capacity: 40,
-        status: 'Active',
         last_maintenance: '',
-        fuel_efficiency: 0,
-        description: ''
+        next_maintenance: ''
       })
     } catch (error) {
       console.error('Error adding bus:', error)
@@ -108,7 +104,30 @@ export default function BusesPage() {
     }
   }
 
-  const handleDeleteBus = async (id: string) => {
+  const handleEditBus = async () => {
+    if (!editingBus) return
+    try {
+      const response = await fetch('/api/buses', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingBus),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to update bus')
+      }
+      const updatedBus = await response.json()
+      setBuses(buses.map(bus => bus.id === updatedBus.id ? updatedBus : bus))
+      setIsEditDialogOpen(false)
+      setEditingBus(null)
+    } catch (error) {
+      console.error('Error updating bus:', error)
+      setError('Failed to update bus. Please try again.')
+    }
+  }
+
+  const handleDeleteBus = async (id: number) => {
     try {
       const response = await fetch('/api/buses', {
         method: 'DELETE',
@@ -128,13 +147,55 @@ export default function BusesPage() {
   }
 
   const filteredBuses = buses.filter(bus =>
-    bus.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bus.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bus.status.toLowerCase().includes(searchTerm.toLowerCase())
+    bus.bus_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    bus.type.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   if (loading) {
-    return <div>Loading buses...</div>
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-6">Bus Management</h1>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Bus Number</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Capacity</TableHead>
+              <TableHead>Last Maintenance</TableHead>
+              <TableHead>Next Maintenance</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(5)].map((_, i) => (
+              <TableRow key={i}>
+                <TableCell>
+                  <Skeleton className="h-4 w-24" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-20" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-12" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-28" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-28" />
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    )
   }
 
   if (error) {
@@ -166,58 +227,38 @@ export default function BusesPage() {
               <DialogTitle>Add New Bus</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="busNumber">Bus Number</Label>
-                  <Input
-                    id="busNumber"
-                    value={newBus.number}
-                    onChange={(e) => setNewBus({ ...newBus, number: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="busType">Type</Label>
-                  <Select
-                    value={newBus.type}
-                    onValueChange={(value) => setNewBus({ ...newBus, type: value })}
-                  >
-                    <SelectTrigger id="busType">
-                      <SelectValue placeholder="Select bus type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Standard">Standard</SelectItem>
-                      <SelectItem value="Deluxe">Deluxe</SelectItem>
-                      <SelectItem value="Mini">Mini</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="busNumber">Bus Number</Label>
+                <Input
+                  id="busNumber"
+                  value={newBus.bus_number}
+                  onChange={(e) => setNewBus({ ...newBus, bus_number: e.target.value })}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="busCapacity">Capacity</Label>
-                  <Input
-                    id="busCapacity"
-                    type="number"
-                    value={newBus.capacity}
-                    onChange={(e) => setNewBus({ ...newBus, capacity: parseInt(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="busStatus">Status</Label>
-                  <Select
-                    value={newBus.status}
-                    onValueChange={(value: 'Active' | 'Maintenance' | 'Out of Service') => setNewBus({ ...newBus, status: value })}
-                  >
-                    <SelectTrigger id="busStatus">
-                      <SelectValue placeholder="Select bus status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Maintenance">Maintenance</SelectItem>
-                      <SelectItem value="Out of Service">Out of Service</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="busType">Type</Label>
+                <Select
+                  value={newBus.type}
+                  onValueChange={(value) => setNewBus({ ...newBus, type: value })}
+                >
+                  <SelectTrigger id="busType">
+                    <SelectValue placeholder="Select bus type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Express">Express</SelectItem>
+                    <SelectItem value="Deluxe">Deluxe</SelectItem>
+                    <SelectItem value="Sleeper">Sleeper</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="busCapacity">Capacity</Label>
+                <Input
+                  id="busCapacity"
+                  type="number"
+                  value={newBus.capacity}
+                  onChange={(e) => setNewBus({ ...newBus, capacity: parseInt(e.target.value) })}
+                />
               </div>
               <div>
                 <Label htmlFor="lastMaintenance">Last Maintenance Date</Label>
@@ -229,21 +270,12 @@ export default function BusesPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="fuelEfficiency">Fuel Efficiency (km/L)</Label>
+                <Label htmlFor="nextMaintenance">Next Maintenance Date</Label>
                 <Input
-                  id="fuelEfficiency"
-                  type="number"
-                  step="0.1"
-                  value={newBus.fuel_efficiency}
-                  onChange={(e) => setNewBus({ ...newBus, fuel_efficiency: parseFloat(e.target.value) })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newBus.description}
-                  onChange={(e) => setNewBus({ ...newBus, description: e.target.value })}
+                  id="nextMaintenance"
+                  type="date"
+                  value={newBus.next_maintenance}
+                  onChange={(e) => setNewBus({ ...newBus, next_maintenance: e.target.value })}
                 />
               </div>
             </div>
@@ -257,33 +289,25 @@ export default function BusesPage() {
             <TableHead>Bus Number</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Capacity</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead>Last Maintenance</TableHead>
-            <TableHead>Fuel Efficiency</TableHead>
+            <TableHead>Next Maintenance</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredBuses.map((bus) => (
             <TableRow key={bus.id}>
-              <TableCell>{bus.number}</TableCell>
+              <TableCell>{bus.bus_number}</TableCell>
               <TableCell>{bus.type}</TableCell>
               <TableCell>{bus.capacity}</TableCell>
-              <TableCell>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  bus.status === 'Active' ? 'bg-green-100 text-green-800' :
-                  bus.status === 'Maintenance' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {bus.status === 'Maintenance' && <AlertTriangle className="mr-1 h-3 w-3" />}
-                  {bus.status}
-                </span>
-              </TableCell>
-              <TableCell>{bus.last_maintenance}</TableCell>
-              <TableCell>{bus.fuel_efficiency} km/L</TableCell>
+              <TableCell>{new Date(bus.last_maintenance).toLocaleDateString()}</TableCell>
+              <TableCell>{new Date(bus.next_maintenance).toLocaleDateString()}</TableCell>
               <TableCell>
                 <div className="flex space-x-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    setEditingBus(bus)
+                    setIsEditDialogOpen(true)
+                  }}>
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => handleDeleteBus(bus.id)}>
@@ -295,6 +319,69 @@ export default function BusesPage() {
           ))}
         </TableBody>
       </Table>
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Bus</DialogTitle>
+          </DialogHeader>
+          {editingBus && (
+            <div className="grid gap-4 py-4">
+              <div>
+                <Label htmlFor="editBusNumber">Bus Number</Label>
+                <Input
+                  id="editBusNumber"
+                  value={editingBus.bus_number}
+                  onChange={(e) => setEditingBus({ ...editingBus, bus_number: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editBusType">Type</Label>
+                <Select
+                  value={editingBus.type}
+                  onValueChange={(value) => setEditingBus({ ...editingBus, type: value })}
+                >
+                  <SelectTrigger id="editBusType">
+                    <SelectValue placeholder="Select bus type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Express">Express</SelectItem>
+                    <SelectItem value="Deluxe">Deluxe</SelectItem>
+                    <SelectItem value="Sleeper">Sleeper</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="editBusCapacity">Capacity</Label>
+                <Input
+                  id="editBusCapacity"
+                  type="number"
+                  value={editingBus.capacity}
+                  onChange={(e) => setEditingBus({ ...editingBus, capacity: parseInt(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editLastMaintenance">Last Maintenance Date</Label>
+                <Input
+                  id="editLastMaintenance"
+                  type="date"
+                  value={editingBus.last_maintenance}
+                  onChange={(e) => setEditingBus({ ...editingBus, last_maintenance: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editNextMaintenance">Next Maintenance Date</Label>
+                <Input
+                  id="editNextMaintenance"
+                  type="date"
+                  value={editingBus.next_maintenance}
+                  onChange={(e) => setEditingBus({ ...editingBus, next_maintenance: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
+          <Button onClick={handleEditBus}>Update Bus</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
