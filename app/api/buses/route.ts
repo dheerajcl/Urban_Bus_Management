@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
   try {
     const bus = await request.json();
     const result = await query(
-      'INSERT INTO buses (number, type, capacity, status, last_maintenance, fuel_efficiency, description) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [bus.number, bus.type, bus.capacity, bus.status, bus.last_maintenance, bus.fuel_efficiency, bus.description]
+      'INSERT INTO buses (bus_number, type, capacity, last_maintenance, next_maintenance) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [bus.bus_number, bus.type, bus.capacity, bus.last_maintenance, bus.next_maintenance]
     );
     return NextResponse.json(result.rows[0]);
   } catch (error) {
@@ -26,26 +26,30 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-    try {
-      const { id } = await request.json();
-      const result = await query('DELETE FROM buses WHERE number = $1', [id]);
-      if (result.rowCount === 0) {
-        return NextResponse.json({ error: 'Bus not found' }, { status: 404 });
-      }
-      return NextResponse.json({ success: true });
-    } catch (error) {
-      console.error('Error deleting bus:', error);
-      return NextResponse.json({ error: 'Failed to delete bus' }, { status: 500 });
+  try {
+    const { id } = await request.json();
+    const result = await query('DELETE FROM buses WHERE id = $1', [id]);
+    if (result.rowCount === 0) {
+      return NextResponse.json({ error: 'Bus not found' }, { status: 404 });
     }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting bus:', error);
+    return NextResponse.json({ error: 'Failed to delete bus' }, { status: 500 });
+  }
 }
 
 export async function PUT(request: NextRequest) {
   try {
     const bus = await request.json();
     const result = await query(
-      'UPDATE buses SET number = $1, type = $2, capacity = $3, status = $4, last_maintenance = $5, fuel_efficiency = $6, description = $7 WHERE id = $8 RETURNING *',
-      [bus.number, bus.type, bus.capacity, bus.status, bus.last_maintenance, bus.fuel_efficiency, bus.description, bus.id]
+      'UPDATE buses SET bus_number = $1, type = $2, capacity = $3, last_maintenance = $4, next_maintenance = $5 WHERE id = $6 RETURNING *',
+      [bus.bus_number, bus.type, bus.capacity, bus.last_maintenance, 
+       bus.next_maintenance, bus.id]
     );
+    if (result.rowCount === 0) {
+      return NextResponse.json({ error: 'Bus not found' }, { status: 404 });
+    }
     return NextResponse.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating bus:', error);
