@@ -156,3 +156,22 @@ html {
 * {
   box-sizing: border-box;
 }
+
+/* Add this CSS for the spinner */
+.loader {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #4b5563; /* Change this color as needed */
+  border-radius: 50%;
+  width: 20px; /* Size of the spinner */
+  height: 20px; /* Size of the spinner */
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

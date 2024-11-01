@@ -12,12 +12,15 @@ export default function LoginPage() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false) 
   const router = useRouter()
   const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setLoading(true)
+
     try {
       const success = await login(username, password)
       if (success) {
@@ -28,6 +31,8 @@ export default function LoginPage() {
     } catch (error) {
       console.error('Login error:', error)
       setError("An unexpected error occurred. Please try again.")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -62,8 +67,12 @@ export default function LoginPage() {
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full">
-              Login
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <div className="loader"></div>
+              ) : (
+                "Login"
+              )}
             </Button>
           </form>
         </CardContent>
@@ -71,3 +80,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

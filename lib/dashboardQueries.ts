@@ -62,6 +62,7 @@ export async function getDashboardData() {
 
   const staffAvailability = await query(`
     SELECT s.name, 
+           s.contact_number,
            CASE WHEN ba.id IS NOT NULL THEN 'On Duty' ELSE 'Available' END as status
     FROM staff s
     LEFT JOIN bus_assignments ba ON s.id = ba.staff_id AND ba.assignment_date = CURRENT_DATE

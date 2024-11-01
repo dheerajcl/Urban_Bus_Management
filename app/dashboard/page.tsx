@@ -1,3 +1,4 @@
+
 import Link from "next/link"
 import {
   AlertTriangle,
@@ -5,8 +6,7 @@ import {
   Bus,
   DollarSign,
   Fuel,
-  // Users,
-  // TrendingUp,
+  Phone, // Import the Phone icon
 } from "lucide-react"
 import {
   Avatar,
@@ -162,6 +162,9 @@ export default async function Dashboard() {
                   <Badge variant={staff.status === 'On Duty' ? 'default' : 'secondary'} className="ml-auto">
                     {staff.status}
                   </Badge>
+                  <a href={`tel:${staff.contact_number}`} className="ml-4">
+                    <Phone className="h-5 w-5 text-muted-foreground" />
+                  </a>
                 </div>
               ))}
             </div>
