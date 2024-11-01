@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server'
+import { authenticateOfficer } from '@/lib/db'
 
 export async function POST(request: Request) {
-  const { email, password } = await request.json()
-  
-  // This is a mock authentication.
-  // In a real application, you would validate against a database.
-  if (email === 'depot@example.com' && password === 'password') {
-    return NextResponse.json({ success: true })
-  } else {
-    return NextResponse.json({ success: false }, { status: 401 })
+  const { username, password } = await request.json()
+
+  try {
+    const officer = await authenticateOfficer(username, password)
+    if (officer) {
+      return NextResponse.json({ username: officer.username, role: officer.role })
+    } else {
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    }
+  } catch (error) {
+    console.error('Login error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
