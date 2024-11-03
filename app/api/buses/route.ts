@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
   try {
     const bus = await request.json();
     const result = await query(
-      'INSERT INTO buses (bus_number, type, capacity, last_maintenance, next_maintenance) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [bus.bus_number, bus.type, bus.capacity, bus.last_maintenance, bus.next_maintenance]
+      'INSERT INTO buses (operator_id, bus_number, type, capacity, last_maintenance, next_maintenance) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [bus.operator_id, bus.bus_number, bus.type, bus.capacity, bus.last_maintenance, bus.next_maintenance]
     );
     return NextResponse.json(result.rows[0]);
   } catch (error) {
@@ -43,9 +43,8 @@ export async function PUT(request: NextRequest) {
   try {
     const bus = await request.json();
     const result = await query(
-      'UPDATE buses SET bus_number = $1, type = $2, capacity = $3, last_maintenance = $4, next_maintenance = $5 WHERE id = $6 RETURNING *',
-      [bus.bus_number, bus.type, bus.capacity, bus.last_maintenance, 
-       bus.next_maintenance, bus.id]
+      'UPDATE buses SET operator_id = $1, bus_number = $2, type = $3, capacity = $4, last_maintenance = $5, next_maintenance = $6 WHERE id = $7 RETURNING *',
+      [bus.operator_id, bus.bus_number, bus.type, bus.capacity, bus.last_maintenance, bus.next_maintenance, bus.id]
     );
     if (result.rowCount === 0) {
       return NextResponse.json({ error: 'Bus not found' }, { status: 404 });
