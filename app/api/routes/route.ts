@@ -5,7 +5,17 @@ export async function GET() {
   try {
     const result = await query(`
       SELECT r.*, 
-             json_agg(json_build_object('id', s.id, 'stop_name', s.stop_name, 'stop_order', s.stop_order)) as stops
+             json_agg(DISTINCT jsonb_build_object('id', s.id, 'stop_name', s.stop_name, 'stop_order', s.stop_order)) as stops,
+             (SELECT jsonb_build_object(
+               'is_assigned', CASE WHEN sch.id IS NOT NULL THEN true ELSE false END,
+               'bus_number', b.bus_number,
+               'departure_time', sch.departure_time,
+               'arrival_time', sch.arrival_time
+             )
+             FROM schedules sch
+             LEFT JOIN buses b ON sch.bus_id = b.id
+             WHERE sch.route_id = r.id
+             LIMIT 1) as schedule_info
       FROM routes r
       LEFT JOIN stops s ON r.id = s.route_id
       GROUP BY r.id
@@ -123,3 +133,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete route' }, { status: 500 })
   }
 }
+
+
+
