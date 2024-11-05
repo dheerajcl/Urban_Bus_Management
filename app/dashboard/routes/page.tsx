@@ -344,6 +344,7 @@ export default function RoutesPage() {
                   <TableHead>Destination</TableHead>
                   <TableHead>Stops</TableHead>
                   <TableHead>Actions</TableHead>
+                  <TableHead>Bus Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -364,6 +365,9 @@ export default function RoutesPage() {
                         <Button variant="outline" size="sm" onClick={() => handleDeleteRoute(route.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
                         {route.schedule_info && route.schedule_info.is_assigned ? (
                           <HoverCard>
                             <HoverCardTrigger asChild>
@@ -398,7 +402,6 @@ export default function RoutesPage() {
                             </Link>
                           </Button>
                         )}
-                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
