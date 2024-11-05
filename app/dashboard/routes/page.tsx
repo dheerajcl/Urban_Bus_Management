@@ -2,6 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Search, Bus, RefreshCw } from 'lucide-react'
+import { Calendar as CalendarIcon, Clock } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -28,6 +36,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
+import { format } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
@@ -36,6 +45,52 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
+
+const TimeInput = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => {
+  const [hours, minutes] = value.split(':').map(Number)
+
+  return (
+    <div className="flex space-x-2">
+      <Select
+        value={hours.toString().padStart(2, '0')}
+        onValueChange={(newHour) => {
+          onChange(`${newHour.padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`)
+        }}
+      >
+        <SelectTrigger className="w-[70px]">
+          <SelectValue placeholder="HH" />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: 24 }, (_, i) => (
+            <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+              {i.toString().padStart(2, '0')}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <span className="text-2xl">:</span>
+      <Select
+        value={minutes.toString().padStart(2, '0')}
+        onValueChange={(newMinute) => {
+          onChange(`${hours.toString().padStart(2, '0')}:${newMinute}`)
+        }}
+      >
+        <SelectTrigger className="w-[70px]">
+          <SelectValue placeholder="MM" />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: 60 }, (_, i) => (
+            <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+              {i.toString().padStart(2, '0')}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
 
 export type Stop = {
   id?: number
@@ -571,25 +626,99 @@ export default function RoutesPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="departure_time">Departure Time</Label>
-                <Input
-                  id="departure_time"
-                  type="datetime-local"
-                  value={busAssignment.departure_time}
-                  onChange={(e) => setBusAssignment({ ...busAssignment, departure_time: e.target.value })}
-                  required
-                />
+              <div className="space-y-2">
+                <Label>Departure</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !busAssignment.departure_time && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {busAssignment.departure_time ? format(new Date(busAssignment.departure_time), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={busAssignment.departure_time ? new Date(busAssignment.departure_time) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          const currentTime = busAssignment.departure_time
+                            ? new Date(busAssignment.departure_time)
+                            : new Date()
+                          date.setHours(currentTime.getHours(), currentTime.getMinutes())
+                          setBusAssignment({ ...busAssignment, departure_time: date.toISOString() })
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-4 w-4" />
+                  <TimeInput
+                    value={busAssignment.departure_time ? format(new Date(busAssignment.departure_time), "HH:mm") : "00:00"}
+                    onChange={(time) => {
+                      const [hours, minutes] = time.split(':').map(Number)
+                      const newDate = busAssignment.departure_time
+                        ? new Date(busAssignment.departure_time)
+                        : new Date()
+                      newDate.setHours(hours, minutes)
+                      setBusAssignment({ ...busAssignment, departure_time: newDate.toISOString() })
+                    }}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="arrival_time">Arrival Time</Label>
-                <Input
-                  id="arrival_time"
-                  type="datetime-local"
-                  value={busAssignment.arrival_time}
-                  onChange={(e) => setBusAssignment({ ...busAssignment, arrival_time: e.target.value })}
-                  required
-                />
+              <div className="space-y-2">
+                <Label>Arrival</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !busAssignment.arrival_time && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {busAssignment.arrival_time ? format(new Date(busAssignment.arrival_time), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={busAssignment.arrival_time ? new Date(busAssignment.arrival_time) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          const currentTime = busAssignment.arrival_time
+                            ? new Date(busAssignment.arrival_time)
+                            : new Date()
+                          date.setHours(currentTime.getHours(), currentTime.getMinutes())
+                          setBusAssignment({ ...busAssignment, arrival_time: date.toISOString() })
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-4 w-4" />
+                  <TimeInput
+                    value={busAssignment.arrival_time ? format(new Date(busAssignment.arrival_time), "HH:mm") : "00:00"}
+                    onChange={(time) => {
+                      const [hours, minutes] = time.split(':').map(Number)
+                      const newDate = busAssignment.arrival_time
+                        ? new Date(busAssignment.arrival_time)
+                        : new Date()
+                      newDate.setHours(hours, minutes)
+                      setBusAssignment({ ...busAssignment, arrival_time: newDate.toISOString() })
+                    }}
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="price">Price</Label>
