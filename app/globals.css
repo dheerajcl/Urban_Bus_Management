@@ -177,3 +177,49 @@ html {
     transform: rotate(360deg);
   }
 }
+
+/* Modern Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;  /* Slimmer width */
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;  /* Hidden track */
+  margin: 4px 0;  /* Add some spacing */
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);  /* More transparent thumb */
+  border-radius: 100vh;
+  transition: all 0.2s ease-in-out;
+  backdrop-filter: blur(8px);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);  /* More visible on hover */
+  cursor: pointer;
+}
+
+/* Hide scrollbar when not scrolling */
+::-webkit-scrollbar-thumb:vertical:active,
+::-webkit-scrollbar-thumb:horizontal:active {
+  background: hsl(var(--muted-foreground) / 0.8);
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+}
+
+/* Only show scrollbar on hover */
+.scroll-container {
+  scrollbar-gutter: stable;
+  &:hover::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+  }
+  &:not(:hover)::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+}
