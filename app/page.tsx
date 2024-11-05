@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Search, Bus, Clock, Users, CreditCard, MapPin, Calendar as CalendarIcon } from 'lucide-react'
@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
+import BookingModal from '@/components/BookingModal'
 
 type BusResult = {
   id: number
@@ -27,11 +28,35 @@ type BusResult = {
 export default function LandingPage() {
   const [source, setSource] = useState('')
   const [destination, setDestination] = useState('')
-  const [date, setDate] = useState<Date>()
+  const [date, setDate] = useState<Date>(new Date())
   const [busResults, setBusResults] = useState<BusResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [searchAttempted, setSearchAttempted] = useState(false);
+  const [searchAttempted, setSearchAttempted] = useState(false)
+  const [sourceSuggestions, setSourceSuggestions] = useState<string[]>([])
+  const [destinationSuggestions, setDestinationSuggestions] = useState<string[]>([])
+
+  //Booking modal
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
+  const [selectedBus, setSelectedBus] = useState<BusResult | null>(null)
+
+  const fetchSuggestions = async (term: string, setSuggestions: React.Dispatch<React.SetStateAction<string[]>>) => {
+    if (term.length < 2) {
+      setSuggestions([])
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/stops?term=${term}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestions')
+      }
+      const data = await response.json()
+      setSuggestions(data.map((item: { stop_name: string }) => item.stop_name))
+    } catch (error) {
+      console.error('Error fetching suggestions:', error)
+    }
+  }
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,7 +67,7 @@ export default function LandingPage() {
 
     setIsLoading(true)
     setError(null)
-    setSearchAttempted(true);
+    setSearchAttempted(true)
 
     const searchParams = new URLSearchParams({
       source,
@@ -64,6 +89,43 @@ export default function LandingPage() {
       setIsLoading(false)
     }
   }
+
+  const handleOpenBookingModal = (bus: BusResult) => {
+    setSelectedBus(bus)
+    setIsBookingModalOpen(true)
+  }
+  
+  const handleCloseBookingModal = () => {
+    setSelectedBus(null)
+    setIsBookingModalOpen(false)
+  }
+  
+  const handleBook = async (busId: number, seats: number, email: string, name: string) => {
+    try {
+      const response = await fetch(`/api/book`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ busId, seats, email, name })
+      })
+      if (!response.ok) {
+        throw new Error('Failed to book seats')
+      }
+      const data = await response.json()
+      console.log('Booking Response:', data)
+      setBusResults((prevResults) =>
+        prevResults.map((bus) =>
+          bus.id === busId ? { ...bus, available_seats: bus.available_seats - seats } : bus
+        )
+      )
+      handleCloseBookingModal()
+    } catch (error) {
+      console.error('Booking error:', error)
+      alert('An error occurred while booking. Please try again.')
+    }
+  }
+
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
@@ -122,9 +184,28 @@ export default function LandingPage() {
                         type="text"
                         placeholder="From"
                         value={source}
-                        onChange={(e) => setSource(e.target.value)}
+                        onChange={(e) => {
+                          setSource(e.target.value)
+                          fetchSuggestions(e.target.value, setSourceSuggestions)
+                        }}
                         className="pl-10 bg-input border-input"
                       />
+                      {sourceSuggestions.length > 0 && (
+                        <ul className="absolute z-20 w-full bg-white border border-gray-300 mt-1 rounded-md shadow-lg">
+                          {sourceSuggestions.map((suggestion, index) => (
+                            <li
+                              key={index}
+                              onClick={() => {
+                                setSource(suggestion)
+                                setSourceSuggestions([])
+                              }}
+                              className="px-4 py-2 cursor-pointer hover:bg-gray-200 text-black"
+                            >
+                              {suggestion}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                     <div className="flex-1 relative">
                       <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
@@ -132,9 +213,28 @@ export default function LandingPage() {
                         type="text"
                         placeholder="To"
                         value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
+                        onChange={(e) => {
+                          setDestination(e.target.value)
+                          fetchSuggestions(e.target.value, setDestinationSuggestions)
+                        }}
                         className="pl-10 bg-input border-input"
                       />
+                      {destinationSuggestions.length > 0 && (
+                        <ul className="absolute z-20 w-full bg-white border border-gray-300 mt-1 rounded-md shadow-lg">
+                          {destinationSuggestions.map((suggestion, index) => (
+                            <li
+                              key={index}
+                              onClick={() => {
+                                setDestination(suggestion)
+                                setDestinationSuggestions([])
+                              }}
+                              className="px-4 py-2 cursor-pointer hover:bg-gray-200 text-black"
+                            >
+                              {suggestion}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                     <div className="flex-1">
                       <Popover>
@@ -154,7 +254,11 @@ export default function LandingPage() {
                           <Calendar
                             mode="single"
                             selected={date}
-                            onSelect={setDate}
+                            onSelect={(day) => {
+                              if (day) {
+                                setDate(day)
+                              }
+                            }}
                             initialFocus
                           />
                         </PopoverContent>
@@ -231,7 +335,7 @@ export default function LandingPage() {
                             <MapPin className="mr-2 h-4 w-4 text-primary" />
                             <span>{bus.route_name}</span>
                           </div>
-                          <Button className="w-full mt-4">Book Now</Button>
+                          <Button className="w-full mt-4" onClick={() => handleOpenBookingModal(bus)}>Book Now</Button>
                         </CardContent>
                       </Card>
                     </motion.div>
@@ -250,6 +354,15 @@ export default function LandingPage() {
               </div>
             </section>
           )}
+
+        {isBookingModalOpen && selectedBus && (
+          <BookingModal
+            busId={selectedBus.id}
+            availableSeats={selectedBus.available_seats}
+            onClose={handleCloseBookingModal}
+            onBook={handleBook}
+          />
+        )}
 
       </main>
 
