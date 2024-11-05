@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Search, Bus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState, useEffect, useCallback } from 'react'
+import { Plus, Pencil, Trash2, Search, Bus, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -11,10 +11,10 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from "@/hooks/use-toast"
 import {
   Table,
   TableBody,
@@ -22,86 +22,154 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/table"
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { Skeleton } from "@/components/ui/skeleton";
-import Link from 'next/link';
+} from "@/components/ui/hover-card"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export type Stop = {
-  id?: number;
-  stop_name: string;
-  stop_order: number;
-};
+  id?: number
+  stop_name: string
+  stop_order: number
+}
 
 export type ScheduleInfo = {
-  is_assigned: boolean;
-  bus_number: string | null;
-  departure_time: string | null;
-  arrival_time: string | null;
-};
+  is_assigned: boolean
+  bus_number: string | null
+  departure_time: string | null
+  arrival_time: string | null
+}
 
 export type Route = {
-  id: number;
-  name: string;
-  source: string;
-  destination: string;
-  operator_id: number;
-  stops: Stop[];
-  schedule_info: ScheduleInfo | null;
-};
+  id: number
+  name: string
+  source: string
+  destination: string
+  operator_id: number
+  stops: Stop[]
+  schedule_info: ScheduleInfo | null
+}
+
+type Bus = {
+  id: number
+  bus_number: string
+}
+
+type BusAssignment = {
+  bus_id: number
+  departure_time: string
+  arrival_time: string
+  price: number
+  available_seats: number
+  distances: { from_stop: string; to_stop: string; distance_km: number }[]
+}
 
 export default function RoutesPage() {
-  const { toast } = useToast();
-  const [routes, setRoutes] = useState<Route[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { toast } = useToast()
+  const [routes, setRoutes] = useState<Route[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isAssignBusDialogOpen, setIsAssignBusDialogOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [newRoute, setNewRoute] = useState<Omit<Route, 'id' | 'schedule_info'>>({
     name: '',
     source: '',
     destination: '',
     operator_id: 1,
-    stops: [],
-  });
-  const [editingRoute, setEditingRoute] = useState<Route | null>(null);
+    stops: []
+  })
+  const [editingRoute, setEditingRoute] = useState<Route | null>(null)
+  const [assigningRoute, setAssigningRoute] = useState<Route | null>(null)
+  const [availableBuses, setAvailableBuses] = useState<Bus[]>([])
+  const [busAssignment, setBusAssignment] = useState<BusAssignment>({
+    bus_id: 0,
+    departure_time: '',
+    arrival_time: '',
+    price: 0,
+    available_seats: 0,
+    distances: []
+  })
 
   const loadRoutes = useCallback(async () => {
     try {
-      setLoading(true);
-      const response = await fetch('/api/routes');
+      setLoading(true)
+      const response = await fetch('/api/routes')
       if (!response.ok) {
-        throw new Error('Failed to fetch routes');
+        throw new Error('Failed to fetch routes')
       }
-      const data = await response.json();
-      setRoutes(data);
+      const data = await response.json()
+      setRoutes(data)
       toast({
         title: "Success",
         description: "Routes loaded successfully",
         className: "bg-green-700 text-white p-2 text-sm",
         style: { minWidth: '200px' },
-      });
+      })
     } catch (error) {
-      console.error('Error fetching routes:', error);
+      console.error('Error fetching routes:', error)
       toast({
         title: "Error",
         description: "Failed to fetch routes. Please try again later.",
         variant: "destructive",
         className: "p-2 text-sm",
         style: { minWidth: '200px' },
-      });
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [toast]);
+  }, [toast])
 
   useEffect(() => {
-    loadRoutes();
-  }, [loadRoutes]);
+    loadRoutes()
+  }, [loadRoutes])
+
+  const fetchAvailableBuses = async () => {
+    try {
+      const response = await fetch('/api/available-buses')
+      if (!response.ok) {
+        throw new Error('Failed to fetch available buses')
+      }
+      const data = await response.json()
+      setAvailableBuses(data)
+    } catch (error) {
+      console.error('Error fetching available buses:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch available buses. Please try again later.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const fetchCurrentAssignment = async (routeId: number) => {
+    try {
+      const response = await fetch(`/api/bus-assignment/${routeId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch current assignment')
+      }
+      const data = await response.json()
+      setBusAssignment(data)
+    } catch (error) {
+      console.error('Error fetching current assignment:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch current assignment. Please try again later.",
+        variant: "destructive",
+      })
+    }
+  }
+
 
   const handleAddRoute = async () => {
     try {
@@ -204,6 +272,69 @@ export default function RoutesPage() {
       });
     }
   };
+
+  const handleAssignBus = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!assigningRoute) return
+
+    try {
+      const url = assigningRoute.schedule_info?.is_assigned ? '/api/reassign-bus' : '/api/assign-bus'
+      const method = assigningRoute.schedule_info?.is_assigned ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          route_id: assigningRoute.id,
+          ...busAssignment
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to assign/reassign bus')
+      }
+
+      toast({
+        title: "Success",
+        description: `Bus ${assigningRoute.schedule_info?.is_assigned ? 're' : ''}assigned successfully`,
+      })
+
+      setIsAssignBusDialogOpen(false)
+      loadRoutes()
+    } catch (error) {
+      console.error('Error assigning/reassigning bus:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to assign/reassign bus. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const openAssignBusDialog = (route: Route) => {
+    setAssigningRoute(route)
+    fetchAvailableBuses()
+    if (route.schedule_info?.is_assigned) {
+      fetchCurrentAssignment(route.id)
+    } else {
+      setBusAssignment({
+        bus_id: 0,
+        departure_time: '',
+        arrival_time: '',
+        price: 0,
+        available_seats: 0,
+        distances: route.stops.slice(0, -1).map((stop, index) => ({
+          from_stop: stop.stop_name,
+          to_stop: route.stops[index + 1].stop_name,
+          distance_km: 0
+        }))
+      })
+    }
+    setIsAssignBusDialogOpen(true)
+  }
 
   const filteredRoutes = routes.filter(route =>
     route.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -357,8 +488,8 @@ export default function RoutesPage() {
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button variant="outline" size="sm" onClick={() => {
-                          setEditingRoute(route);
-                          setIsEditDialogOpen(true);
+                          setEditingRoute(route)
+                          setIsEditDialogOpen(true)
                         }}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -368,7 +499,8 @@ export default function RoutesPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                        {route.schedule_info && route.schedule_info.is_assigned ? (
+                      {route.schedule_info && route.schedule_info.is_assigned ? (
+                        <div className="flex items-center space-x-2">
                           <HoverCard>
                             <HoverCardTrigger asChild>
                               <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-100 text-green-800 text-sm font-medium cursor-pointer">
@@ -394,14 +526,17 @@ export default function RoutesPage() {
                               </div>
                             </HoverCardContent>
                           </HoverCard>
-                        ) : (
-                          <Button variant="outline" size="sm" asChild>
-                            <Link href={`/dashboard/assign-bus/${route.id}`}>
-                              <Bus className="h-4 w-4 mr-2" />
-                              Assign Bus
-                            </Link>
+                          <Button variant="outline" size="sm" onClick={() => openAssignBusDialog(route)}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Reassign Bus
                           </Button>
-                        )}
+                        </div>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={() => openAssignBusDialog(route)}>
+                          <Bus className="h-4 w-4 mr-2" />
+                          Assign Bus
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -410,6 +545,103 @@ export default function RoutesPage() {
           )}
         </CardContent>
       </Card>
+      {/* Assign/Reassign Bus Dialog */}
+      <Dialog open={isAssignBusDialogOpen} onOpenChange={setIsAssignBusDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{assigningRoute?.schedule_info?.is_assigned ? 'Reassign' : 'Assign'} Bus to Route: {assigningRoute?.name}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAssignBus} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="bus_id">Bus</Label>
+                <Select
+                  value={busAssignment.bus_id.toString()}
+                  onValueChange={(value) => setBusAssignment({ ...busAssignment, bus_id: parseInt(value) })}
+                >
+                  <SelectTrigger id="bus_id">
+                    <SelectValue placeholder="Select a bus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableBuses.map((bus) => (
+                      <SelectItem key={bus.id} value={bus.id.toString()}>
+                        {bus.bus_number}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="departure_time">Departure Time</Label>
+                <Input
+                  id="departure_time"
+                  type="datetime-local"
+                  value={busAssignment.departure_time}
+                  onChange={(e) => setBusAssignment({ ...busAssignment, departure_time: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="arrival_time">Arrival Time</Label>
+                <Input
+                  id="arrival_time"
+                  type="datetime-local"
+                  value={busAssignment.arrival_time}
+                  onChange={(e) => setBusAssignment({ ...busAssignment, arrival_time: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="price">Price</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={busAssignment.price}
+                  onChange={(e) => setBusAssignment({ ...busAssignment, price: parseFloat(e.target.value) })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="available_seats">Available Seats</Label>
+                <Input
+                  id="available_seats"
+                  type="number"
+                  value={busAssignment.available_seats}
+                  onChange={(e) => setBusAssignment({ 
+                    ...busAssignment,
+                    available_seats: parseInt(e.target.value)
+                  })}
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Distances between stops</h3>
+              {busAssignment.distances.map((distance, index) => (
+                <div key={index} className="flex items-center space-x-2 mb-2">
+                  <span>{distance.from_stop} to {distance.to_stop}:</span>
+                  <Input
+                    type="number"
+                    value={distance.distance_km}
+                    onChange={(e) => {
+                      const newDistances = [...busAssignment.distances]
+                      newDistances[index].distance_km = parseFloat(e.target.value)
+                      setBusAssignment({ ...busAssignment, distances: newDistances })
+                    }}
+                    placeholder="Distance in km"
+                    className="w-32"
+                    required
+                  />
+                  <span>km</span>
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button type="submit">{assigningRoute?.schedule_info?.is_assigned ? 'Reassign' : 'Assign'} Bus</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
