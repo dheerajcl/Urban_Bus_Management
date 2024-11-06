@@ -1,9 +1,11 @@
+'use client'
 
 import React, { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { Cross2Icon } from '@radix-ui/react-icons'
+import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 type BookingModalProps = {
   busId: number
@@ -27,51 +29,67 @@ const BookingModal: React.FC<BookingModalProps> = ({ busId, availableSeats, onCl
 
   return (
     <Dialog.Root open={true} onOpenChange={onClose}>
-      <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50" />
-      <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded shadow-lg max-w-md w-full">
-        <Dialog.Title className="text-xl font-bold mb-4 text-black">Book Seats</Dialog.Title>
-        <Dialog.Description className="mb-4 text-gray-700">
-          Please enter the number of seats and your email for reminders.
-        </Dialog.Description>
-        <div className="mb-4">
-          <label className="block mb-2 text-gray-700">Number of Seats</label>
-          <Input
-            type="number"
-            value={seats}
-            onChange={(e) => setSeats(Number(e.target.value))}
-            min={1}
-            max={availableSeats}
-            className="w-full p-2 border border-gray-300 rounded text-black bg-white"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2 text-gray-700">Email (for reminders)</label>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded text-black bg-white"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2 text-gray-700">Passenger Name</label>
-          <Input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded text-black bg-white"
-          />
-        </div>
-        <div className="flex justify-end space-x-4">
-          <Button variant="ghost" onClick={onClose} className="text-black bg-gray-200">Cancel</Button>
-          <Button onClick={handleBook} className="text-white bg-blue-500">Book</Button>
-        </div>
-        <Dialog.Close asChild>
-          <button className="absolute top-2 right-2 text-gray-700">
-            <Cross2Icon />
-          </button>
-        </Dialog.Close>
-      </Dialog.Content>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-zinc-900 p-6 rounded-lg shadow-lg max-w-md w-full border border-zinc-800">
+          <Dialog.Title className="text-2xl font-bold mb-4 text-white">Book Your Seats</Dialog.Title>
+          <Dialog.Description className="mb-6 text-zinc-400">
+            Please enter the number of seats and your details for booking.
+          </Dialog.Description>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="seats" className="text-sm font-medium text-zinc-200">Number of Seats</Label>
+              <Input
+                id="seats"
+                type="number"
+                value={seats}
+                onChange={(e) => setSeats(Number(e.target.value))}
+                min={1}
+                max={availableSeats}
+                className="w-full bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-zinc-200">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-zinc-800 border-zinc-700 text-white"
+                placeholder="your@email.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium text-zinc-200">Passenger Name</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-zinc-800 border-zinc-700 text-white"
+                placeholder="John Doe"
+              />
+            </div>
+          </div>
+          <div className="mt-6 flex justify-end space-x-4">
+            <Button variant="ghost" onClick={onClose} className="text-zinc-400 hover:text-white hover:bg-zinc-800">
+              Cancel
+            </Button>
+            <Button onClick={handleBook} className="bg-green-500 text-white hover:bg-green-600">
+              Book Now
+            </Button>
+          </div>
+          <Dialog.Close asChild>
+            <button
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white rounded-full p-1"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Dialog.Close>
+        </Dialog.Content>
+      </Dialog.Portal>
     </Dialog.Root>
   )
 }

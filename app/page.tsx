@@ -45,7 +45,6 @@ export default function LandingPage() {
   const [busResults, setBusResults] = useState<BusResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [searchAttempted, setSearchAttempted] = useState(false)
   const [sourceSuggestions, setSourceSuggestions] = useState<string[]>([])
   const [destinationSuggestions, setDestinationSuggestions] = useState<string[]>([])
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
@@ -108,7 +107,6 @@ export default function LandingPage() {
 
     setIsLoading(true)
     setError(null)
-    setSearchAttempted(true)
 
     const searchParams = new URLSearchParams({
       source,
@@ -122,8 +120,8 @@ export default function LandingPage() {
       const data = await response.json()
       setBusResults(data)
       // Scroll to results section after successful search
-      if (resultsRef.current) {
-        resultsRef.current.scrollIntoView({ behavior: 'smooth' })
+      if (data.length > 0 && resultsRef.current) {
+        resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     } catch (error) {
       console.error('Search buses error:', error)
