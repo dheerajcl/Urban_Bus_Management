@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Search, Bus, Clock, Users, CreditCard, MapPin, Calendar as CalendarIcon, ChevronRight, Menu, LogIn } from 'lucide-react'
+import { Search, Bus, Clock, Users, CreditCard, MapPin, Calendar as CalendarIcon, Menu, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
+import { Twitter, Facebook, Instagram } from 'lucide-react'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { motion, AnimatePresence } from 'framer-motion'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
@@ -22,6 +24,18 @@ type BusResult = {
   arrival_time: string
   route_name: string
   available_seats: number
+}
+
+type Feature = {
+  icon: React.ReactNode
+  title: string
+  description: string
+}
+
+type SocialLink = {
+  href: string
+  icon: React.ReactNode
+  label: string
 }
 
 export default function LandingPage() {
@@ -41,6 +55,7 @@ export default function LandingPage() {
 
   const blobRef = useRef<HTMLDivElement>(null)
   const heroSectionRef = useRef<HTMLElement>(null)
+  const resultsRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
@@ -106,6 +121,10 @@ export default function LandingPage() {
       if (!response.ok) throw new Error('Failed to fetch bus results')
       const data = await response.json()
       setBusResults(data)
+      // Scroll to results section after successful search
+      if (resultsRef.current) {
+        resultsRef.current.scrollIntoView({ behavior: 'smooth' })
+      }
     } catch (error) {
       console.error('Search buses error:', error)
       setError('An error occurred while searching for buses. Please try again.')
@@ -146,6 +165,42 @@ export default function LandingPage() {
     }
   }
 
+  const features: Feature[] = [
+    {
+      icon: <Bus className="h-6 w-6 text-green-500" />,
+      title: "Real-time Tracking",
+      description: "Track your bus location in real-time with our advanced GPS system"
+    },
+    {
+      icon: <CreditCard className="h-6 w-6 text-green-500" />,
+      title: "Secure Payments",
+      description: "Safe and secure payment processing for your peace of mind"
+    },
+    {
+      icon: <Clock className="h-6 w-6 text-green-500" />,
+      title: "24/7 Support",
+      description: "Round-the-clock customer support for all your travel needs"
+    }
+  ]
+  
+  const socialLinks: SocialLink[] = [
+    {
+      href: "https://twitter.com/swiftcommute",
+      icon: <Twitter className="h-5 w-5" />,
+      label: "Twitter"
+    },
+    {
+      href: "https://facebook.com/swiftcommute",
+      icon: <Facebook className="h-5 w-5" />,
+      label: "Facebook"
+    },
+    {
+      href: "https://instagram.com/swiftcommute",
+      icon: <Instagram className="h-5 w-5" />,
+      label: "Instagram"
+    }
+  ]
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans">
       <style jsx global>{`
@@ -170,38 +225,38 @@ export default function LandingPage() {
         scrollY > 50 ? "bg-zinc-900/40 backdrop-blur-md" : "bg-transparent"
       )}>
         <nav className="container mx-auto px-6 py-6 flex justify-between items-center max-w-6xl">
-        <Link href="/" className="flex items-center space-x-2">
-          <Bus className="h-5 w-6" />
-          <div className="flex flex-col">
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl font-semibold italic bg-clip-text relative">
-                Swift
-                <svg 
-                  className="absolute -bottom-1 left-0"
-                  width="100%"
-                  height="6"
-                  viewBox="0 0 100 6"
-                >
-                  <line 
-                    x1="0" 
-                    y1="3" 
-                    x2="80" 
-                    y2="3" 
-                    stroke="#22c55e" 
-                    strokeWidth="3"
-                  />
-                  <polygon 
-                    points="80,0 95,3 80,6"
-                    fill="#22c55e"
-                  />
-                </svg>
-              </span>
-              <span className="text-2xl font-semibold text-white">
-                Commute
-              </span>
+          <Link href="/" className="flex items-center space-x-2">
+            <Bus className="h-5 w-6" />
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl font-semibold italic bg-clip-text relative">
+                  Swift
+                  <svg 
+                    className="absolute -bottom-1 left-0"
+                    width="100%"
+                    height="6"
+                    viewBox="0 0 100 6"
+                  >
+                    <line 
+                      x1="0" 
+                      y1="3" 
+                      x2="80" 
+                      y2="3" 
+                      stroke="#22c55e" 
+                      strokeWidth="3"
+                    />
+                    <polygon 
+                      points="80,0 95,3 80,6"
+                      fill="#22c55e"
+                    />
+                  </svg>
+                </span>
+                <span className="text-2xl font-semibold text-white">
+                  Commute
+                </span>
+              </div>
             </div>
-          </div>
-        </Link>
+          </Link>
           <div className="hidden md:flex space-x-8 items-center">
             <Link href="#features" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">Features</Link>
             <Link href="#about" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">About</Link>
@@ -284,7 +339,7 @@ export default function LandingPage() {
                         className="pl-10 bg-zinc-900/50 border-white/20 text-white placeholder-white/60 focus-visible:ring-white/20 focus-visible:ring-offset-zinc-900 h-10"
                       />
                       {sourceSuggestions.length > 0 && (
-                        <ul className="absolute z-20 w-full bg-zjsx-c6749d47b0d8825c flex flex-col md:flex-row gap-5inc-900/90 border border-zinc-800 mt-1 rounded-md shadow-xl">
+                        <ul className="absolute z-20 w-full bg-zinc-900/90 border border-zinc-800 mt-1 rounded-md shadow-xl">
                           {sourceSuggestions.map((suggestion, index) => (
                             <li
                               key={index}
@@ -384,54 +439,56 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Results Section */}
         <AnimatePresence>
           {busResults.length > 0 && (
             <motion.section
+              ref={resultsRef}
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
               transition={{ duration: 0.5 }}
-              className="py-24 bg-zinc-900"
+              className="py-24 bg-background/50 backdrop-blur-xl"
             >
               <div className="container mx-auto px-4">
-                <h2 className="text-4xl font-bold mb-16 text-center text-zinc-50">Available Buses</h2>
+                <h2 className="text-4xl font-bold mb-16 text-center text-foreground">Available Buses</h2>
                 <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                   {busResults.map((bus) => (
                     <motion.div
                       key={bus.id}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ y: -5 }}
+                      transition={{ type: "spring", stiffness: 300 }}
                     >
-                      <Card className="bg-zinc-800 border-zinc-700 shadow-lg hover:shadow-xl transition-shadow">
+                      <Card className="bg-card border-border hover:border-border/80">
                         <CardContent className="p-6">
-                          <h3 className="text-xl font-semibold mb-4 text-zinc-50 flex items-center">
-                            <Bus className="mr-2 h-5 w-5 text-blue-500" />
+                          <h3 className="text-xl font-semibold mb-6 text-card-foreground flex items-center">
+                            <Bus className="mr-2 h-5 w-5 text-green-500" />
                             {bus.type} Bus
                           </h3>
-                          <div className="space-y-2 text-zinc-400">
+                          <div className="space-y-4 text-muted-foreground">
                             <p className="flex items-center">
-                              <CreditCard className="mr-2 h-4 w-4 text-blue-500" />
-                              Price: ₹{bus.price}
+                              <CreditCard className="mr-2 h-4 w-4 text-green-500" />
+                              ₹{bus.price}
                             </p>
                             <p className="flex items-center">
-                              <Users className="mr-2 h-4 w-4 text-blue-500" />
-                              Available Seats: {bus.available_seats}/{bus.capacity}
+                              <Users className="mr-2 h-4 w-4 text-green-500" />
+                              {bus.available_seats}/{bus.capacity} seats
                             </p>
                             <p className="flex items-center">
-                              <Clock className="mr-2 h-4 w-4 text-blue-500" />
-                              Departure: {new Date(bus.departure_time).toLocaleTimeString()}
+                              <Clock className="mr-2 h-4 w-4 text-green-500" />
+                              {new Date(bus.departure_time).toLocaleTimeString()}
                             </p>
                             <p className="flex items-center">
-                              <Clock className="mr-2 h-4 w-4 text-blue-500" />
-                              Arrival: {new Date(bus.arrival_time).toLocaleTimeString()}
+                              <Clock className="mr-2 h-4 w-4 text-green-500" />
+                              {new Date(bus.arrival_time).toLocaleTimeString()}
                             </p>
                             <p className="flex items-center">
-                              <MapPin className="mr-2 h-4 w-4 text-blue-500" />
+                              <MapPin className="mr-2 h-4 w-4 text-green-500" />
                               {bus.route_name}
                             </p>
                           </div>
                           <Button 
-                            className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-zinc-50" 
+                            className="w-full mt-6 bg-zinc-800 hover:bg-zinc-700 text-zinc-100" 
                             onClick={() => handleOpenBookingModal(bus)}
                           >
                             Book Now
@@ -445,93 +502,88 @@ export default function LandingPage() {
             </motion.section>
           )}
         </AnimatePresence>
-
-        {busResults.length === 0 && !isLoading && searchAttempted && (
-          <section className="py-24 bg-zinc-900">
-            <div className="container mx-auto px-4 text-center">
-              <h2 className="text-2xl font-bold mb-4 text-zinc-50">No buses found</h2>
-              <p className="text-zinc-400">Try adjusting your search criteria or selecting a different date.</p>
-            </div>
-          </section>
-        )}
-
-        <section id="features" className="py-24 bg-zinc-900">
+        
+        {/* Features Section */}
+        <section id="features" className="py-24 bg-background/50 backdrop-blur-xl">
           <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-bold mb-16 text-center text-zinc-50">Why Choose Swift Commute?</h2>
+            <h2 className="text-4xl font-bold mb-16 text-center text-foreground">Why Choose Swift Commute?</h2>
             <div className="grid gap-12 md:grid-cols-3">
-              <FeatureCard
-                icon={<Clock className="h-12 w-12 text-blue-500" />}
-                title="Real-time Updates"
-                description="Get live updates on bus locations and estimated arrival times."
-              />
-              <FeatureCard
-                icon={<MapPin className="h-12 w-12 text-blue-500" />}
-                title="Smart Routing"
-                description="Our AI optimizes routes for the fastest and most efficient travel."
-              />
-              <FeatureCard
-                icon={<Bus className="h-12 w-12 text-blue-500" />}
-                title="Eco-friendly"
-                description="Reduce your carbon footprint by choosing public transportation."
-              />
+              {features.map((feature, index) => (
+                <FeatureCard key={index} {...feature} />
+              ))}
             </div>
           </div>
         </section>
-
-        <section id="about" className="py-24 bg-zinc-800">
+            
+        {/* About Section with FAQs */}
+        <section id="about" className="py-24 bg-muted/50 backdrop-blur-xl">
           <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-4xl font-bold mb-8 text-zinc-50">About Swift Commute</h2>
-              <p className="text-xl text-zinc-400 mb-8 leading-relaxed">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-4xl font-bold mb-8 text-center text-foreground">About Swift Commute</h2>
+              <p className="text-xl text-muted-foreground mb-12 leading-relaxed text-center">
                 Swift Commute is revolutionizing urban travel with our intelligent bus routing system. 
-                We&apos;are committed to making public transportation more efficient, accessible, and 
+                We&apos;re committed to making public transportation more efficient, accessible, and 
                 environmentally friendly for everyone.
               </p>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-zinc-50 text-lg px-8 py-3 rounded-full transition-all duration-300 ease-in-out transform hover:scale-105">
-                Learn More <ChevronRight className="ml-2 h-5 w-5" />
-              </Button>
+
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="item-1">
+                  <AccordionTrigger>How does booking work?</AccordionTrigger>
+                  <AccordionContent>
+                    Search for your route, select your preferred bus, and book instantly with our secure payment system.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-2">
+                  <AccordionTrigger>What if I need to cancel?</AccordionTrigger>
+                  <AccordionContent>
+                    Cancellations are free up to 24 hours before departure. A small fee applies for later cancellations.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-3">
+                  <AccordionTrigger>Are the buses trackable?</AccordionTrigger>
+                  <AccordionContent>
+                    Yes, all our buses are equipped with GPS tracking. Track your bus in real-time through our app.
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </div>
         </section>
       </main>
-
-      <footer id="contact" className="bg-zinc-900 py-16 border-t border-zinc-800">
+            
+      {/* Footer */}
+      <footer className="bg-background py-16 border-t border-border">
         <div className="container mx-auto px-4">
           <div className="grid gap-12 md:grid-cols-3">
             <div>
-              <h3 className="text-2xl font-semibold mb-6 text-zinc-50">Swift Commute</h3>
-              <p className="text-zinc-400 leading-relaxed">Revolutionizing urban travel with intelligent bus routing.</p>
+              <h3 className="text-2xl font-semibold mb-6 text-foreground">Swift Commute</h3>
+              <p className="text-muted-foreground">Revolutionizing urban travel with intelligent bus routing.</p>
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-6 text-zinc-50">Quick Links</h3>
+              <h3 className="text-xl font-semibold mb-6 text-foreground">Quick Links</h3>
               <ul className="space-y-4">
-                <li><Link href="#" className="text-zinc-400 hover:text-blue-500 transition-colors">About Us</Link></li>
-                <li><Link href="#" className="text-zinc-400 hover:text-blue-500 transition-colors">FAQs</Link></li>
-                <li><Link href="#" className="text-zinc-400 hover:text-blue-500 transition-colors">Privacy Policy</Link></li>
+                <li><Link href="#" className="text-muted-foreground hover:text-green-500 transition-colors">About Us</Link></li>
+                <li><Link href="#" className="text-muted-foreground hover:text-green-500 transition-colors">FAQs</Link></li>
+                <li><Link href="#" className="text-muted-foreground hover:text-green-500 transition-colors">Privacy Policy</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-6 text-zinc-50">Connect</h3>
+              <h3 className="text-xl font-semibold mb-6 text-foreground">Connect</h3>
               <div className="flex space-x-6">
-                <Link href="#" className="text-zinc-400 hover:text-blue-500 transition-colors">
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                  </svg>
-                </Link>
-                <Link href="#" className="text-zinc-400 hover:text-blue-500 transition-colors">
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
-                  </svg>
-                </Link>
-                <Link href="#" className="text-zinc-400 hover:text-blue-500 transition-colors">
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clipRule="evenodd" />
-                  </svg>
-                </Link>
+                {socialLinks.map((link, index) => (
+                  <Link 
+                    key={index}
+                    href={link.href} 
+                    className="text-muted-foreground hover:text-green-500 transition-colors"
+                  >
+                    {link.icon}
+                    <span className="sr-only">{link.label}</span>
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
-          <div className="mt-12 pt-8 border-t border-zinc-800 text-center text-zinc-400">
+          <div className="mt-12 pt-8 border-t border-border text-center text-muted-foreground">
             <p>&copy; 2024 Swift Commute. All rights reserved.</p>
           </div>
         </div>
@@ -549,14 +601,14 @@ export default function LandingPage() {
   )
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
+function FeatureCard({ icon, title, description }: Feature) {
   return (
-    <div className="text-center p-6 bg-zinc-800 rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:scale-105">
-      <div className="inline-block p-4 bg-blue-900 rounded-full mb-6">
+    <div className="text-center p-8 bg-card border border-border rounded-xl transition-all duration-300 hover:border-green-500/50 hover:shadow-[0_0_15px_rgba(34,197,94,0.1)]">
+      <div className="inline-block p-4 bg-green-500/10 rounded-full mb-6">
         {icon}
       </div>
-      <h3 className="text-2xl font-semibold mb-4 text-zinc-50">{title}</h3>
-      <p className="text-zinc-400 leading-relaxed">{description}</p>
+      <h3 className="text-2xl font-semibold mb-4 text-card-foreground">{title}</h3>
+      <p className="text-muted-foreground leading-relaxed">{description}</p>
     </div>
   )
 }
