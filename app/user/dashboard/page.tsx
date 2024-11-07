@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
+import { Loader } from "lucide-react"
 
 type Booking = {
   id: number
@@ -17,13 +18,19 @@ type Booking = {
 
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
-  const { user } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const { user, isLoggedIn } = useAuth()
   const { toast } = useToast()
 
   useEffect(() => {
     const fetchBookings = async () => {
+      if (!isLoggedIn || !user?.email) {
+        setLoading(false)
+        return
+      }
+
       try {
-        const response = await fetch('/api/user/bookings')
+        const response = await fetch(`/api/user/bookings?email=${encodeURIComponent(user.email)}`)
         if (!response.ok) throw new Error('Failed to fetch bookings')
         const data = await response.json()
         setBookings(data)
@@ -34,13 +41,13 @@ export default function DashboardPage() {
           description: "Failed to load your bookings. Please try again later.",
           variant: "destructive",
         })
+      } finally {
+        setLoading(false)
       }
     }
 
-    if (user) {
-      fetchBookings()
-    }
-  }, [user, toast])
+    fetchBookings()
+  }, [user, isLoggedIn, toast])
 
   const formatPrice = (price: string | number | null): string => {
     if (price === null) return 'N/A'
@@ -48,48 +55,62 @@ export default function DashboardPage() {
     return isNaN(numPrice) ? 'N/A' : `₹${numPrice.toFixed(2)}`
   }
 
-  // if (!user) {
-  //   return (
-  //     <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-50">
-  //       <p className="text-xl">Please log in to view your dashboard.</p>
-  //     </div>
-  //   )
-  // }
+  if (!isLoggedIn) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-50">
+        <p className="text-xl">Please log in to view your dashboard.</p>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-50">
+        <Loader className="animate-spin mr-2" size={24} />
+        <p>Loading your bookings...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen bg-zinc-950 text-zinc-50">
       <div className="flex-1 ml-24 mr-24 p-8">
-        <h1 className="text-3xl font-bold mb-8">Welcome, !</h1>
+        <h1 className="text-3xl font-bold mb-2">Welcome, {user?.username || 'User'}!</h1>
+        <p className="text-zinc-400 mb-8">Email: {user?.email}</p>
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-zinc-100">Your Bookings</CardTitle>
             <CardDescription className="text-zinc-400">Here are your recent bus bookings</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-zinc-300">Route</TableHead>
-                  <TableHead className="text-zinc-300">Departure</TableHead>
-                  <TableHead className="text-zinc-300">Arrival</TableHead>
-                  <TableHead className="text-zinc-300">Seats</TableHead>
-                  <TableHead className="text-zinc-300">Total Price</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bookings.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell className="text-zinc-100">{booking.route_name}</TableCell>
-                    <TableCell className="text-zinc-100">{new Date(booking.departure_time).toLocaleString()}</TableCell>
-                    <TableCell className="text-zinc-100">{new Date(booking.arrival_time).toLocaleString()}</TableCell>
-                    <TableCell className="text-zinc-100">{booking.seats_booked}</TableCell>
-                    <TableCell className="text-zinc-100">
-                      {formatPrice(booking.total_price)}
-                    </TableCell>
+            {bookings.length === 0 ? (
+              <p className="text-zinc-400">You have no bookings yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-zinc-300">Route</TableHead>
+                    <TableHead className="text-zinc-300">Departure</TableHead>
+                    <TableHead className="text-zinc-300">Arrival</TableHead>
+                    <TableHead className="text-zinc-300">Seats</TableHead>
+                    <TableHead className="text-zinc-300">Total Price</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {bookings.map((booking) => (
+                    <TableRow key={booking.id}>
+                      <TableCell className="text-zinc-100">{booking.route_name}</TableCell>
+                      <TableCell className="text-zinc-100">{new Date(booking.departure_time).toLocaleString()}</TableCell>
+                      <TableCell className="text-zinc-100">{new Date(booking.arrival_time).toLocaleString()}</TableCell>
+                      <TableCell className="text-zinc-100">{booking.seats_booked}</TableCell>
+                      <TableCell className="text-zinc-100">
+                        {formatPrice(booking.total_price)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>

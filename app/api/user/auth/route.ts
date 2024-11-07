@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const user = result.rows[0]
 
     if (user && await bcrypt.compare(password, user.password_hash)) {
-      const { password_hash, ...userWithoutPassword } = user
+      const { ...userWithoutPassword } = user
       return NextResponse.json({ ...userWithoutPassword, role: 'user' })
     } else {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
