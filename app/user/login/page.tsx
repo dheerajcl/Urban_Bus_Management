@@ -9,8 +9,12 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth"
 
+// Create a variable to store the email
+export let userEmail: string | null = null
+
 export default function UserLoginPage() {
   const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -25,7 +29,8 @@ export default function UserLoginPage() {
     try {
       const success = await login(username, password, false)
       if (success) {
-        router.push('/')
+        userEmail = email // Save the email to the variable
+        router.push('/user/dashboard')
       } else {
         setError("Invalid username or password")
       }
@@ -54,6 +59,17 @@ export default function UserLoginPage() {
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>

@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { useAuth } from "@/lib/auth"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
 import { Loader } from "lucide-react"
+
+// Import the userEmail variable
+import { userEmail } from "../login/page"
 
 type Booking = {
   id: number
@@ -19,18 +22,18 @@ type Booking = {
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
-  const { user, isLoggedIn } = useAuth()
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     const fetchBookings = async () => {
-      if (!isLoggedIn || !user?.email) {
+      if (!userEmail) {
         setLoading(false)
         return
       }
 
       try {
-        const response = await fetch(`/api/user/bookings?email=${encodeURIComponent(user.email)}`)
+        const response = await fetch(`/api/user/bookings?email=${encodeURIComponent(userEmail)}`)
         if (!response.ok) throw new Error('Failed to fetch bookings')
         const data = await response.json()
         setBookings(data)
@@ -47,7 +50,7 @@ export default function DashboardPage() {
     }
 
     fetchBookings()
-  }, [user, isLoggedIn, toast])
+  }, [toast])
 
   const formatPrice = (price: string | number | null): string => {
     if (price === null) return 'N/A'
@@ -55,12 +58,9 @@ export default function DashboardPage() {
     return isNaN(numPrice) ? 'N/A' : `₹${numPrice.toFixed(2)}`
   }
 
-  if (!isLoggedIn) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-50">
-        <p className="text-xl">Please log in to view your dashboard.</p>
-      </div>
-    )
+  if (!userEmail) {
+    router.push('/user/login')
+    return null
   }
 
   if (loading) {
@@ -75,8 +75,8 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen bg-zinc-950 text-zinc-50">
       <div className="flex-1 ml-24 mr-24 p-8">
-        <h1 className="text-3xl font-bold mb-2">Welcome, {user?.username || 'User'}!</h1>
-        <p className="text-zinc-400 mb-8">Email: {user?.email}</p>
+        <h1 className="text-3xl font-bold mb-2">Welcome!</h1>
+        <p className="text-zinc-400 mb-8">Email: {userEmail}</p>
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-zinc-100">Your Bookings</CardTitle>
