@@ -43,7 +43,7 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
           >
-            {children}
+            {children}  
           </ThemeProvider>
         </AuthProvider>
         <Toaster />

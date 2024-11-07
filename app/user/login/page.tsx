@@ -2,17 +2,18 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth"
 
-export default function LoginPage() {
+export default function UserLoginPage() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false) 
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { login } = useAuth()
 
@@ -22,9 +23,9 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const success = await login(username, password)
+      const success = await login(username, password, false)
       if (success) {
-        router.push('/dashboard')
+        router.push('/')
       } else {
         setError("Invalid username or password")
       }
@@ -40,8 +41,8 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-[350px]">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>Enter your credentials to access the system</CardDescription>
+          <CardTitle>User Login</CardTitle>
+          <CardDescription>Enter your credentials to access your account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -68,16 +69,14 @@ export default function LoginPage() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <div className="loader"></div>
-              ) : (
-                "Login"
-              )}
+              {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
+          <div className="mt-4 text-center">
+            <p>Don&apos;t have an account? <Link href="/user/register" className="text-primary hover:underline">Register here</Link></p>
+          </div>
         </CardContent>
       </Card>
     </div>
   )
 }
-

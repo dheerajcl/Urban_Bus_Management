@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Search, Bus, Clock, Users, CreditCard, MapPin, Calendar as CalendarIcon, Menu, LogIn } from 'lucide-react'
+import { Search, Bus, Clock, Users, CreditCard, MapPin, Calendar as CalendarIcon, Menu, LogIn, User, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -14,6 +14,8 @@ import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import BookingModal from '@/components/BookingModal'
+// import { useAuth } from "@/lib/auth"
+import { useToast } from "@/hooks/use-toast"
 
 type BusResult = {
   id: number
@@ -39,6 +41,7 @@ type SocialLink = {
 }
 
 export default function LandingPage() {
+  const { toast } = useToast()
   const [source, setSource] = useState('')
   const [destination, setDestination] = useState('')
   const [date, setDate] = useState<Date>(new Date())
@@ -51,6 +54,7 @@ export default function LandingPage() {
   const [selectedBus, setSelectedBus] = useState<BusResult | null>(null)
   const [scrollY, setScrollY] = useState(0)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   const blobRef = useRef<HTMLDivElement>(null)
   const heroSectionRef = useRef<HTMLElement>(null)
@@ -68,7 +72,6 @@ export default function LandingPage() {
         const heroRect = heroSectionRef.current.getBoundingClientRect()
         const { clientX, clientY } = e
         
-        // Only update blob position if mouse is within hero section
         if (clientY <= heroRect.bottom) {
           blobRef.current.style.transform = `translate3d(calc(${clientX}px - 50%), calc(${clientY}px - 50%), 0)`
         }
@@ -76,11 +79,20 @@ export default function LandingPage() {
     }
 
     document.addEventListener('mousemove', handleMouseMove)
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-    }
+    return () => document.removeEventListener('mousemove', handleMouseMove)
   }, [])
+
+  useEffect(() => {
+    // Check if user is logged in (e.g., by checking localStorage or a cookie)
+    const userToken = localStorage.getItem('userToken')
+    setIsLoggedIn(!!userToken)
+  }, [])
+
+  const handleLogout = () => {
+    // Clear user token and update state
+    localStorage.removeItem('userToken')
+    setIsLoggedIn(false)
+  }
 
   const fetchSuggestions = async (term: string, setSuggestions: React.Dispatch<React.SetStateAction<string[]>>) => {
     if (term.length < 2) {
@@ -119,7 +131,6 @@ export default function LandingPage() {
       if (!response.ok) throw new Error('Failed to fetch bus results')
       const data = await response.json()
       setBusResults(data)
-      // Scroll to results section after successful search
       if (data.length > 0 && resultsRef.current) {
         resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -148,7 +159,9 @@ export default function LandingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ busId, seats, email, name })
       })
-      if (!response.ok) throw new Error('Failed to book seats')
+      if (!response.ok) {
+        throw new Error('Failed to book seats')
+      }
       const data = await response.json()
       console.log('Booking Response:', data)
       setBusResults((prevResults) =>
@@ -157,9 +170,19 @@ export default function LandingPage() {
         )
       )
       handleCloseBookingModal()
+      // Show a success message to the user
+      toast({
+        title: 'Booking Successful',
+        description: `Total price: ₹${data.totalPrice.toFixed(2)}`,
+        className: "bg-green-700 text-white p-2 text-sm",
+      })
     } catch (error) {
       console.error('Booking error:', error)
-      alert('An error occurred while booking. Please try again.')
+      toast({
+        title: 'Booking Failed',
+        description: 'An error occurred while booking. Please try again.',
+        variant: "destructive",
+      })
     }
   }
 
@@ -259,12 +282,35 @@ export default function LandingPage() {
             <Link href="#features" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">Features</Link>
             <Link href="#about" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">About</Link>
             <Link href="#contact" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">Contact</Link>
-            <Link href="/login">
-              <Button>
-                <LogIn className="mr-2 h-4 w-4" />
-                Login
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link href="/user/dashboard">
+                  <Button>
+                    <User className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <Button onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/user/login">
+                  <Button>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    User Login
+                  </Button>
+                </Link>
+                <Link href="/admin/login">
+                  <Button>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Admin Login
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
           <Button variant="ghost" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
             <Menu className="h-6 w-6" />
@@ -283,12 +329,35 @@ export default function LandingPage() {
                 <Link href="#features" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">Features</Link>
                 <Link href="#about" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">About</Link>
                 <Link href="#contact" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">Contact</Link>
-                <Link href="/login">
-                  <Button>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Login
-                  </Button>
-                </Link>
+                {isLoggedIn ? (
+                  <>
+                    <Link href="/user/dashboard">
+                      <Button className="w-full">
+                        <User className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Button className="w-full" onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/user/login">
+                      <Button className="w-full">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        User Login
+                      </Button>
+                    </Link>
+                    <Link href="/admin/login">
+                      <Button className="w-full">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Admin Login
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
           )}
