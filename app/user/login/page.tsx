@@ -8,9 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth"
-
-// Create a variable to store the email
-export let userEmail: string | null = null
+import { setUserEmail } from "@/lib/userStore"
 
 export default function UserLoginPage() {
   const [username, setUsername] = useState("")
@@ -29,7 +27,7 @@ export default function UserLoginPage() {
     try {
       const success = await login(username, password, false)
       if (success) {
-        userEmail = email // Save the email to the variable
+        setUserEmail(email) // Save the email to the store
         router.push('/user/dashboard')
       } else {
         setError("Invalid username or password")

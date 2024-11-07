@@ -6,9 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
 import { Loader } from "lucide-react"
-
-// Import the userEmail variable
-import { userEmail } from "../login/page"
+import { getUserEmail } from "@/lib/userStore"
 
 type Booking = {
   id: number
@@ -24,6 +22,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const router = useRouter()
+  const userEmail = getUserEmail()
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -50,7 +49,7 @@ export default function DashboardPage() {
     }
 
     fetchBookings()
-  }, [toast])
+  }, [toast, userEmail])
 
   const formatPrice = (price: string | number | null): string => {
     if (price === null) return 'N/A'
