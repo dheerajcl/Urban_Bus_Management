@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import {
   Table,
@@ -36,7 +37,6 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
-import { format } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
@@ -46,18 +46,20 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-
 const TimeInput = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => {
-  const [hours, minutes] = value.split(':').map(Number)
+  const [hours, minutes] = (value || '00:00').split(':').map(Number)
+
+  const handleHourChange = (newHour: string) => {
+    onChange(`${newHour.padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`)
+  }
+
+  const handleMinuteChange = (newMinute: string) => {
+    onChange(`${hours.toString().padStart(2, '0')}:${newMinute}`)
+  }
 
   return (
     <div className="flex space-x-2">
-      <Select
-        value={hours.toString().padStart(2, '0')}
-        onValueChange={(newHour) => {
-          onChange(`${newHour.padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`)
-        }}
-      >
+      <Select value={hours.toString().padStart(2, '0')} onValueChange={handleHourChange}>
         <SelectTrigger className="w-[70px]">
           <SelectValue placeholder="HH" />
         </SelectTrigger>
@@ -70,12 +72,7 @@ const TimeInput = ({ value, onChange }: { value: string, onChange: (value: strin
         </SelectContent>
       </Select>
       <span className="text-2xl">:</span>
-      <Select
-        value={minutes.toString().padStart(2, '0')}
-        onValueChange={(newMinute) => {
-          onChange(`${hours.toString().padStart(2, '0')}:${newMinute}`)
-        }}
-      >
+      <Select value={minutes.toString().padStart(2, '0')} onValueChange={handleMinuteChange}>
         <SelectTrigger className="w-[70px]">
           <SelectValue placeholder="MM" />
         </SelectTrigger>
@@ -91,18 +88,19 @@ const TimeInput = ({ value, onChange }: { value: string, onChange: (value: strin
   )
 }
 
+export type ScheduleInfo = {
+  is_assigned: boolean
+  bus_number: string | null
+  departure_date: string | null
+  departure_time: string | null
+  arrival_date: string | null
+  arrival_time: string | null
+}
 
 export type Stop = {
   id?: number
   stop_name: string
   stop_order: number
-}
-
-export type ScheduleInfo = {
-  is_assigned: boolean
-  bus_number: string | null
-  departure_time: string | null
-  arrival_time: string | null
 }
 
 export type Route = {
@@ -122,7 +120,9 @@ type Bus = {
 
 type BusAssignment = {
   bus_id: number
+  departure_date: string
   departure_time: string
+  arrival_date: string
   arrival_time: string
   price: number
   available_seats: number
@@ -149,7 +149,9 @@ export default function RoutesPage() {
   const [availableBuses, setAvailableBuses] = useState<Bus[]>([])
   const [busAssignment, setBusAssignment] = useState<BusAssignment>({
     bus_id: 0,
+    departure_date: '',
     departure_time: '',
+    arrival_date: '',
     arrival_time: '',
     price: 0,
     available_seats: 0,
@@ -165,12 +167,6 @@ export default function RoutesPage() {
       }
       const data = await response.json()
       setRoutes(data)
-      // toast({
-      //   title: "Success",
-      //   description: "Routes loaded successfully",
-      //   className: "bg-green-700 text-white p-2 text-sm",
-      //   style: { minWidth: '200px' },
-      // })
     } catch (error) {
       console.error('Error fetching routes:', error)
       toast({
@@ -214,7 +210,16 @@ export default function RoutesPage() {
         throw new Error('Failed to fetch current assignment')
       }
       const data = await response.json()
-      setBusAssignment(data)
+      setBusAssignment({
+        bus_id: data.bus_id,
+        departure_date: data.departure_date,
+        departure_time: data.departure_time,
+        arrival_date: data.arrival_date,
+        arrival_time: data.arrival_time,
+        price: data.price,
+        available_seats: data.available_seats,
+        distances: data.distances
+      })
     } catch (error) {
       console.error('Error fetching current assignment:', error)
       toast({
@@ -224,7 +229,6 @@ export default function RoutesPage() {
       })
     }
   }
-
 
   const handleAddRoute = async () => {
     try {
@@ -406,7 +410,9 @@ export default function RoutesPage() {
     } else {
       setBusAssignment({
         bus_id: 0,
+        departure_date: '',
         departure_time: '',
+        arrival_date: '',
         arrival_time: '',
         price: 0,
         available_seats: 0,
@@ -418,6 +424,16 @@ export default function RoutesPage() {
       })
     }
     setIsAssignBusDialogOpen(true)
+  }
+
+  const handleDateChange = (field: 'departure_date' | 'arrival_date', date: Date | undefined) => {
+    if (date) {
+      setBusAssignment(prev => ({ ...prev, [field]: format(date, 'yyyy-MM-dd') }))
+    }
+  }
+
+  const handleTimeChange = (field: 'departure_time' | 'arrival_time', time: string) => {
+    setBusAssignment({ ...busAssignment, [field]: time })
   }
 
   const filteredRoutes = routes.filter(route =>
@@ -603,13 +619,13 @@ export default function RoutesPage() {
                                   <h4 className="text-sm font-semibold text-foreground">Assigned Bus Details</h4>
                                   <p className="text-sm text-foreground/90">Bus Number: {route.schedule_info.bus_number || 'N/A'}</p>
                                   <p className="text-sm text-foreground/90">
-                                    Departure: {route.schedule_info.departure_time 
-                                      ? format(new Date(route.schedule_info.departure_time), "PPP p")
+                                    Departure: {route.schedule_info.departure_date && route.schedule_info.departure_time
+                                      ? `${format(new Date(route.schedule_info.departure_date), "PPP")} at ${route.schedule_info.departure_time}`
                                       : 'N/A'}
                                   </p>
                                   <p className="text-sm text-foreground/90">
-                                    Arrival: {route.schedule_info.arrival_time 
-                                      ? format(new Date(route.schedule_info.arrival_time), "PPP p")
+                                    Arrival: {route.schedule_info.arrival_date && route.schedule_info.arrival_time
+                                      ? `${format(new Date(route.schedule_info.arrival_date), "PPP")} at ${route.schedule_info.arrival_time}`
                                       : 'N/A'}
                                   </p>
                                   <Button 
@@ -644,8 +660,9 @@ export default function RoutesPage() {
           )}
         </CardContent>
       </Card>
-       {/* Assign/Reassign Bus Dialog */}
-       <Dialog open={isAssignBusDialogOpen} onOpenChange={setIsAssignBusDialogOpen}>
+      
+      {/* Assign/Reassign Bus Dialog */}
+      <Dialog open={isAssignBusDialogOpen} onOpenChange={setIsAssignBusDialogOpen}>
         <DialogContent className="sm:max-w-[525px] backdrop-blur-md bg-background/95">
           <DialogHeader>
             <DialogTitle className="text-2xl font-semibold">
@@ -673,102 +690,68 @@ export default function RoutesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Departure</Label>
-                <div className="flex space-x-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !busAssignment.departure_time && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {busAssignment.departure_time ? format(new Date(busAssignment.departure_time), "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={busAssignment.departure_time ? new Date(busAssignment.departure_time) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            const currentTime = busAssignment.departure_time
-                              ? new Date(busAssignment.departure_time)
-                              : new Date()
-                            date.setHours(currentTime.getHours(), currentTime.getMinutes())
-                            setBusAssignment({ ...busAssignment, departure_time: date.toISOString() })
-                          }
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <TimeInput
-                      value={busAssignment.departure_time ? format(new Date(busAssignment.departure_time), "HH:mm") : "00:00"}
-                      onChange={(time) => {
-                        const [hours, minutes] = time.split(':').map(Number)
-                        const newDate = busAssignment.departure_time
-                          ? new Date(busAssignment.departure_time)
-                          : new Date()
-                        newDate.setHours(hours, minutes)
-                        setBusAssignment({ ...busAssignment, departure_time: newDate.toISOString() })
-                      }}
+                <Label>Departure Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !busAssignment.departure_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {busAssignment.departure_date ? format(new Date(busAssignment.departure_date), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={busAssignment.departure_date ? new Date(busAssignment.departure_date) : undefined}
+                      onSelect={(date) => handleDateChange('departure_date', date)}
+                      initialFocus
                     />
-                  </div>
-                </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
-                <Label>Arrival</Label>
-                <div className="flex space-x-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !busAssignment.arrival_time && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {busAssignment.arrival_time ? format(new Date(busAssignment.arrival_time), "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={busAssignment.arrival_time ? new Date(busAssignment.arrival_time) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            const currentTime = busAssignment.arrival_time
-                              ? new Date(busAssignment.arrival_time)
-                              : new Date()
-                            date.setHours(currentTime.getHours(), currentTime.getMinutes())
-                            setBusAssignment({ ...busAssignment, arrival_time: date.toISOString() })
-                          }
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <TimeInput
-                      value={busAssignment.arrival_time ? format(new Date(busAssignment.arrival_time), "HH:mm") : "00:00"}
-                      onChange={(time) => {
-                        const [hours, minutes] = time.split(':').map(Number)
-                        const newDate = busAssignment.arrival_time
-                          ? new Date(busAssignment.arrival_time)
-                          : new Date()
-                        newDate.setHours(hours, minutes)
-                        setBusAssignment({ ...busAssignment, arrival_time: newDate.toISOString() })
-                      }}
+                <Label>Departure Time</Label>
+                <TimeInput
+                  value={busAssignment.departure_time}
+                  onChange={(time) => handleTimeChange('departure_time', time)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Arrival Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !busAssignment.arrival_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {busAssignment.arrival_date ? format(new Date(busAssignment.arrival_date), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={busAssignment.arrival_date ? new Date(busAssignment.arrival_date) : undefined}
+                      onSelect={(date) => handleDateChange('arrival_date', date)}
+                      initialFocus
                     />
-                  </div>
-                </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Arrival Time</Label>
+                <TimeInput
+                  value={busAssignment.arrival_time}
+                  onChange={(time) => handleTimeChange('arrival_time', time)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="price">Price</Label>
@@ -787,7 +770,7 @@ export default function RoutesPage() {
                   id="available_seats"
                   type="number"
                   value={busAssignment.available_seats}
-                  onChange={(e) => setBusAssignment({ 
+                  onChange={(e) => setBusAssignment({
                     ...busAssignment,
                     available_seats: parseInt(e.target.value)
                   })}
@@ -796,25 +779,39 @@ export default function RoutesPage() {
                 />
               </div>
             </div>
-            <div  className="space-y-4">
+            <div className="space-y-4">
               <h3 className="text-lg font-semibold">Distances between stops</h3>
               <div className="grid gap-4 max-h-[200px] overflow-y-auto pr-2">
                 {busAssignment.distances.map((distance, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <span className="text-sm whitespace-nowrap">{distance.from_stop} to {distance.to_stop}:</span>
+                  <div key={index} className="grid grid-cols-3 gap-2 items-center">
+                    <Input
+                      value={distance.from_stop}
+                      onChange={(e) => {
+                        const newDistances = [...busAssignment.distances];
+                        newDistances[index].from_stop = e.target.value;
+                        setBusAssignment({ ...busAssignment, distances: newDistances });
+                      }}
+                      placeholder="From Stop"
+                    />
+                    <Input
+                      value={distance.to_stop}
+                      onChange={(e) => {
+                        const newDistances = [...busAssignment.distances];
+                        newDistances[index].to_stop = e.target.value;
+                        setBusAssignment({ ...busAssignment, distances: newDistances });
+                      }}
+                      placeholder="To Stop"
+                    />
                     <Input
                       type="number"
                       value={distance.distance_km}
                       onChange={(e) => {
-                        const newDistances = [...busAssignment.distances]
-                        newDistances[index].distance_km = parseFloat(e.target.value)
-                        setBusAssignment({ ...busAssignment, distances: newDistances })
+                        const newDistances = [...busAssignment.distances];
+                        newDistances[index].distance_km = parseFloat(e.target.value);
+                        setBusAssignment({ ...busAssignment, distances: newDistances });
                       }}
-                      placeholder="Distance in km"
-                      className="w-24"
-                      required
+                      placeholder="Distance (km)"
                     />
-                    <span className="text-sm">km</span>
                   </div>
                 ))}
               </div>
@@ -827,101 +824,112 @@ export default function RoutesPage() {
           </form>
         </DialogContent>
       </Dialog>
+
       {/* Edit Route Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[525px] backdrop-blur-md bg-background/95">
           <DialogHeader>
             <DialogTitle className="text-2xl font-semibold">Edit Route</DialogTitle>
           </DialogHeader>
-          {editingRoute && (
-            <form onSubmit={(e) => { e.preventDefault(); handleEditRoute(); }} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-name">Name</Label>
-                  <Input
-                    id="edit-name"
-                    value={editingRoute.name}
-                    onChange={(e) => setEditingRoute({ ...editingRoute, name: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-source">Source</Label>
-                  <Input
-                    id="edit-source"
-                    value={editingRoute.source}
-                    onChange={(e) => setEditingRoute({ ...editingRoute, source: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-destination">Destination</Label>
-                  <Input
-                    id="edit-destination"
-                    value={editingRoute.destination}
-                    onChange={(e) => setEditingRoute({ ...editingRoute, destination: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-stops">Stops</Label>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
-                  {editingRoute.stops.map((stop, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <Input
-                        value={stop.stop_name}
-                        onChange={(e) => {
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="edit-name"
+                value={editingRoute?.name || ''}
+                onChange={(e) => setEditingRoute(editingRoute ? { ...editingRoute, name: e.target.value } : null)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-source" className="text-right">
+                Source
+              </Label>
+              <Input
+                id="edit-source"
+                value={editingRoute?.source || ''}
+                onChange={(e) => setEditingRoute(editingRoute ? { ...editingRoute, source: e.target.value } : null)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-destination" className="text-right">
+                Destination
+              </Label>
+              <Input
+                id="edit-destination"
+                value={editingRoute?.destination || ''}
+                onChange={(e) => setEditingRoute(editingRoute ? { ...editingRoute, destination: e.target.value } : null)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-stops" className="text-right">
+                Stops
+              </Label>
+              <div className="col-span-3 space-y-2">
+                {editingRoute?.stops.map((stop, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <Input
+                      value={stop.stop_name}
+                      onChange={(e) => {
+                        if (editingRoute) {
                           const updatedStops = [...editingRoute.stops];
                           updatedStops[index].stop_name = e.target.value;
                           setEditingRoute({ ...editingRoute, stops: updatedStops });
-                        }}
-                        placeholder="Stop name"
-                        className="flex-grow"
-                      />
-                      <Input
-                        type="number"
-                        value={stop.stop_order}
-                        onChange={(e) => {
+                        }
+                      }}
+                      placeholder="Stop name"
+                    />
+                    <Input
+                      type="number"
+                      value={stop.stop_order}
+                      onChange={(e) => {
+                        if (editingRoute) {
                           const updatedStops = [...editingRoute.stops];
                           updatedStops[index].stop_order = parseInt(e.target.value);
                           setEditingRoute({ ...editingRoute, stops: updatedStops });
-                        }}
-                        placeholder="Order"
-                        className="w-20"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
+                        }
+                      }}
+                      placeholder="Order"
+                      className="w-20"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (editingRoute) {
                           const updatedStops = editingRoute.stops.filter((_, i) => i !== index);
                           setEditingRoute({ ...editingRoute, stops: updatedStops });
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
                 <Button
-                  type="button"
-                  onClick={() => setEditingRoute({
-                    ...editingRoute,
-                    stops: [...editingRoute.stops, { stop_name: '', stop_order: editingRoute.stops.length + 1 }]
-                  })}
-                  className="mt-2"
+                  onClick={() => {
+                    if (editingRoute) {
+                      setEditingRoute({
+                        ...editingRoute,
+                        stops: [...editingRoute.stops, { stop_name: '', stop_order: editingRoute.stops.length + 1 }]
+                      });
+                    }
+                  }}
                 >
-                  <Plus className="h-4 w-4 mr-2" /> Add Stop
+                  Add Stop
                 </Button>
               </div>
-              <DialogFooter>
-                <Button type="submit" className="w-full sm:w-auto">Update Route</Button>
-              </DialogFooter>
-            </form>
-          )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" onClick={handleEditRoute}>Save Changes</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

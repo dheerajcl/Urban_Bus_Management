@@ -3,7 +3,7 @@ import { query } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
-    const { route_id, bus_id, departure_time, arrival_time, price, available_seats, distances } = await request.json()
+    const { route_id, bus_id, departure_date, departure_time, arrival_date, arrival_time, price, available_seats, distances } = await request.json()
 
     // Check if the bus exists and get its details
     const busResult = await query('SELECT id, capacity, bus_number FROM buses WHERE id = $1', [bus_id])
@@ -24,10 +24,10 @@ export async function POST(request: NextRequest) {
     try {
       // Insert into schedules table
       const scheduleResult = await query(`
-        INSERT INTO schedules (bus_id, route_id, departure_time, arrival_time, price, available_seats)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO schedules (bus_id, route_id, departure_date, departure_time, arrival_date, arrival_time, price, available_seats)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id
-      `, [bus_id, route_id, departure_time, arrival_time, price, available_seats])
+      `, [bus_id, route_id, departure_date, departure_time, arrival_date, arrival_time, price, available_seats])
 
       // Insert into distances table
       for (const distance of distances) {
