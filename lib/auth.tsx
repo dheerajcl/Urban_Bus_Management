@@ -30,13 +30,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
   useEffect(() => {
-    const token = localStorage.getItem('userToken')
+    const storedUser = localStorage.getItem('user')
 
-    if (token) {
-      // Here you would typically verify the token with your backend
-      // and fetch the user data. For now, we'll just set isLoggedIn to true.
+    if (storedUser) {
+      const userData = JSON.parse(storedUser)
+      setUser(userData)
       setIsLoggedIn(true)
-      // Fetch user data here and set it with setUser(userData)
     } else {
       setIsLoggedIn(false)
       if (pathname !== '/' && pathname !== '/user/login' && pathname !== '/admin/login' && pathname !== '/register') {
@@ -56,10 +55,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        localStorage.setItem('userToken', data.token)
-        setUser(data.user)
+        const userData = await response.json()
+        const user: User = {
+          id: userData.id || 0,
+          username: userData.username,
+          role: isAdmin ? 'admin' : 'user',
+          email: userData.email || ''
+        }
+        setUser(user)
         setIsLoggedIn(true)
+        localStorage.setItem('user', JSON.stringify(user))
         return true
       } else {
         return false
@@ -92,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null)
     setIsLoggedIn(false)
-    localStorage.removeItem('userToken')
+    localStorage.removeItem('user')
     router.push('/')
   }
 

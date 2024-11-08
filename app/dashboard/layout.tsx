@@ -28,13 +28,13 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!user) {
-      router.push('/login')
+      router.push('/admin/login')
     }
   }, [user, router])
 
   const handleLogout = async () => {
     await logout()
-    router.push('/login')
+    router.push('/admin/login')
   }
 
   const isActive = (path: string) => pathname === path
