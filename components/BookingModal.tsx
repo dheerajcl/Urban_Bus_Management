@@ -1,29 +1,72 @@
 'use client'
 
 import React, { useState } from 'react'
+import { cn } from "@/lib/utils"
 import * as Dialog from '@radix-ui/react-dialog'
-import { X } from 'lucide-react'
+import { X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useToast } from "@/hooks/use-toast"
 
 type BookingModalProps = {
   busId: number
   availableSeats: number
   onClose: () => void
-  onBook: (busId: number, seats: number, email: string, name: string) => void
+  onBook: (busId: number, seats: number, email: string, name: string) => Promise<void>
 }
 
 const BookingModal: React.FC<BookingModalProps> = ({ busId, availableSeats, onClose, onBook }) => {
+  const { toast } = useToast()
   const [seats, setSeats] = useState(1)
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [errors, setErrors] = useState<{
+    seats?: string
+    email?: string
+    name?: string
+  }>({})
 
-  const handleBook = () => {
-    if (seats > 0 && seats <= availableSeats) {
-      onBook(busId, seats, email, name)
-    } else {
-      alert('Invalid number of seats')
+  const validateForm = () => {
+    const newErrors: {
+      seats?: string
+      email?: string
+      name?: string
+    } = {}
+
+    if (seats <= 0 || seats > availableSeats) {
+      newErrors.seats = `Please select between 1 and ${availableSeats} seats`
+    }
+
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+
+    if (!name.trim()) {
+      newErrors.name = 'Please enter passenger name'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleBook = async () => {
+    if (!validateForm()) {
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      await onBook(busId, seats, email, name)
+    } catch (error) {
+      toast({
+        title: 'Booking Failed',
+        description: 'An error occurred while booking. Please try again.',
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -46,8 +89,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ busId, availableSeats, onCl
                 onChange={(e) => setSeats(Number(e.target.value))}
                 min={1}
                 max={availableSeats}
-                className="w-full bg-zinc-800 border-zinc-700 text-white"
+                className={cn(
+                  "w-full bg-zinc-800 border-zinc-700 text-white",
+                  errors.seats && "border-red-500"
+                )}
               />
+              {errors.seats && (
+                <p className="text-sm text-red-500 mt-1">{errors.seats}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-zinc-200">Email</Label>
@@ -56,9 +105,15 @@ const BookingModal: React.FC<BookingModalProps> = ({ busId, availableSeats, onCl
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-zinc-800 border-zinc-700 text-white"
+                className={cn(
+                  "w-full bg-zinc-800 border-zinc-700 text-white",
+                  errors.email && "border-red-500"
+                )}
                 placeholder="your@email.com"
               />
+              {errors.email && (
+                <p className="text-sm text-red-500 mt-1">{errors.email}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-medium text-zinc-200">Passenger Name</Label>
@@ -67,23 +122,46 @@ const BookingModal: React.FC<BookingModalProps> = ({ busId, availableSeats, onCl
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-zinc-800 border-zinc-700 text-white"
+                className={cn(
+                  "w-full bg-zinc-800 border-zinc-700 text-white",
+                  errors.name && "border-red-500"
+                )}
                 placeholder="John Doe"
               />
+              {errors.name && (
+                <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+              )}
             </div>
           </div>
           <div className="mt-6 flex justify-end space-x-4">
-            <Button variant="ghost" onClick={onClose} className="text-zinc-400 hover:text-white hover:bg-zinc-800">
+            <Button 
+              variant="ghost" 
+              onClick={onClose} 
+              className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+              disabled={isLoading}
+            >
               Cancel
             </Button>
-            <Button onClick={handleBook} className="bg-green-500 text-white hover:bg-green-600">
-              Book Now
+            <Button 
+              onClick={handleBook} 
+              className="bg-green-500 text-white hover:bg-green-600"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Booking...
+                </>
+              ) : (
+                'Book Now'
+              )}
             </Button>
           </div>
           <Dialog.Close asChild>
             <button
               className="absolute top-4 right-4 text-zinc-400 hover:text-white rounded-full p-1"
               aria-label="Close"
+              disabled={isLoading}
             >
               <X className="h-4 w-4" />
             </button>

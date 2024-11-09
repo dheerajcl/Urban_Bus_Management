@@ -5,7 +5,7 @@ export async function getDashboardData() {
     SELECT COUNT(DISTINCT b.id) as count 
     FROM buses b
     JOIN schedules s ON b.id = s.bus_id
-    WHERE DATE(s.departure_time) = CURRENT_DATE
+    WHERE DATE(s.departure) = CURRENT_DATE
   `)
 
   const totalRevenue = await query(`
@@ -37,15 +37,15 @@ export async function getDashboardData() {
 
   const activeRoutes = await query(`
     SELECT b.bus_number as bus_no, r.name as route, s.name as driver, 
-           sch.departure_time, sch.arrival_time,
+           sch.departure, sch.arrival,
            CASE 
-             WHEN sch.departure_time > CURRENT_TIMESTAMP THEN 'Scheduled'
-             WHEN sch.departure_time <= CURRENT_TIMESTAMP AND sch.arrival_time > CURRENT_TIMESTAMP THEN 'On Route'
+             WHEN sch.departure > CURRENT_TIMESTAMP THEN 'Scheduled'
+             WHEN sch.departure <= CURRENT_TIMESTAMP AND sch.arrival > CURRENT_TIMESTAMP THEN 'On Route'
              ELSE 'Completed'
            END as status,
            CASE 
-             WHEN sch.departure_time > CURRENT_TIMESTAMP THEN sch.departure_time::text
-             WHEN sch.arrival_time > CURRENT_TIMESTAMP THEN sch.arrival_time::text
+             WHEN sch.departure > CURRENT_TIMESTAMP THEN sch.departure::text
+             WHEN sch.arrival > CURRENT_TIMESTAMP THEN sch.arrival::text
              ELSE NULL
            END as eta
     FROM schedules sch
@@ -55,8 +55,8 @@ export async function getDashboardData() {
     JOIN staff s ON ba.staff_id = s.id
     JOIN staff_roles sr ON s.id = sr.staff_id
     JOIN roles ro ON sr.role_id = ro.id
-    WHERE DATE(sch.departure_time) = CURRENT_DATE AND ro.role_name = 'Driver'
-    ORDER BY sch.departure_time
+    WHERE DATE(sch.departure) = CURRENT_DATE AND ro.role_name = 'Driver'
+    ORDER BY sch.departure
     LIMIT 5
   `)  
 

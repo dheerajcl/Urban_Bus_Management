@@ -22,8 +22,8 @@ type BusResult = {
   type: string
   price: string
   capacity: number
-  departure_time: string
-  arrival_time: string
+  departure: string
+  arrival: string
   route_name: string
   available_seats: number
 }
@@ -159,21 +159,30 @@ export default function LandingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ busId, seats, email, name })
       })
+  
       if (!response.ok) {
         throw new Error('Failed to book seats')
       }
+  
       const data = await response.json()
       console.log('Booking Response:', data)
+  
+      // Update bus results
       setBusResults((prevResults) =>
         prevResults.map((bus) =>
           bus.id === busId ? { ...bus, available_seats: bus.available_seats - seats } : bus
         )
       )
+  
       handleCloseBookingModal()
-      // Show a success message to the user
+  
+      // Check if totalPrice exists and is a number
+      const totalPrice = typeof data.totalPrice === 'number' ? data.totalPrice : 0
+  
+      // Show success message
       toast({
         title: 'Booking Successful',
-        description: `Total price: ₹${data.totalPrice.toFixed(2)}`,
+        description: `Total price: ₹${totalPrice.toFixed(2)}`,
         className: "bg-green-700 text-white p-2 text-sm",
       })
     } catch (error) {
@@ -543,11 +552,11 @@ export default function LandingPage() {
                             </p>
                             <p className="flex items-center">
                               <Clock className="mr-2 h-4 w-4 text-green-500" />
-                              {new Date(bus.departure_time).toLocaleTimeString()}
+                              {new Date(bus.departure).toLocaleTimeString()}
                             </p>
                             <p className="flex items-center">
                               <Clock className="mr-2 h-4 w-4 text-green-500" />
-                              {new Date(bus.arrival_time).toLocaleTimeString()}
+                              {new Date(bus.arrival).toLocaleTimeString()}
                             </p>
                             <p className="flex items-center">
                               <MapPin className="mr-2 h-4 w-4 text-green-500" />

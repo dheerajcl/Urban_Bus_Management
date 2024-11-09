@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
   try {
     const result = await query(`
-      SELECT s.id, b.type, s.price, b.capacity, s.departure_time, s.arrival_time, 
+      SELECT s.id, b.type, s.price, b.capacity, s.departure, s.arrival, 
              r.name as route_name, s.available_seats
       FROM schedules s
       JOIN buses b ON s.bus_id = b.id
@@ -19,8 +19,8 @@ export async function GET(request: Request) {
       WHERE source_stop.stop_name = $1
         AND dest_stop.stop_name = $2
         AND source_stop.stop_order < dest_stop.stop_order
-        AND DATE(s.departure_time) = $3
-      ORDER BY s.departure_time
+        AND DATE(s.departure) = $3
+      ORDER BY s.departure
     `, [source, destination, date])
 
     return NextResponse.json(result.rows)

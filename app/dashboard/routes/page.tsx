@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Search, Bus, RefreshCw, X } from 'lucide-react'
-import { Calendar as CalendarIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+// import { Calendar as CalendarIcon } from "lucide-react"
+// import { cn } from "@/lib/utils"
+// import { Calendar } from "@/components/ui/calendar"
+// import {
+//   Popover,
+//   PopoverContent,
+//   PopoverTrigger,
+// } from "@/components/ui/popover"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -46,55 +46,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-const TimeInput = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => {
-  const [hours, minutes] = (value || '00:00').split(':').map(Number)
-
-  const handleHourChange = (newHour: string) => {
-    onChange(`${newHour.padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`)
-  }
-
-  const handleMinuteChange = (newMinute: string) => {
-    onChange(`${hours.toString().padStart(2, '0')}:${newMinute}`)
-  }
-
-  return (
-    <div className="flex space-x-2">
-      <Select value={hours.toString().padStart(2, '0')} onValueChange={handleHourChange}>
-        <SelectTrigger className="w-[70px]">
-          <SelectValue placeholder="HH" />
-        </SelectTrigger>
-        <SelectContent>
-          {Array.from({ length: 24 }, (_, i) => (
-            <SelectItem key={i} value={i.toString().padStart(2, '0')}>
-              {i.toString().padStart(2, '0')}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <span className="text-2xl">:</span>
-      <Select value={minutes.toString().padStart(2, '0')} onValueChange={handleMinuteChange}>
-        <SelectTrigger className="w-[70px]">
-          <SelectValue placeholder="MM" />
-        </SelectTrigger>
-        <SelectContent>
-          {Array.from({ length: 60 }, (_, i) => (
-            <SelectItem key={i} value={i.toString().padStart(2, '0')}>
-              {i.toString().padStart(2, '0')}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  )
-}
-
 export type ScheduleInfo = {
   is_assigned: boolean
   bus_number: string | null
-  departure_date: string | null
-  departure_time: string | null
-  arrival_date: string | null
-  arrival_time: string | null
+  departure: string | null
+  arrival: string | null
 }
 
 export type Stop = {
@@ -120,10 +76,8 @@ type Bus = {
 
 type BusAssignment = {
   bus_id: number
-  departure_date: string
-  departure_time: string
-  arrival_date: string
-  arrival_time: string
+  departure: string | null
+  arrival: string | null
   price: number
   available_seats: number
   distances: { from_stop: string; to_stop: string; distance_km: number }[]
@@ -149,10 +103,8 @@ export default function RoutesPage() {
   const [availableBuses, setAvailableBuses] = useState<Bus[]>([])
   const [busAssignment, setBusAssignment] = useState<BusAssignment>({
     bus_id: 0,
-    departure_date: '',
-    departure_time: '',
-    arrival_date: '',
-    arrival_time: '',
+    departure: null,
+    arrival: null,
     price: 0,
     available_seats: 0,
     distances: []
@@ -211,14 +163,9 @@ export default function RoutesPage() {
       }
       const data = await response.json()
       setBusAssignment({
-        bus_id: data.bus_id,
-        departure_date: data.departure_date,
-        departure_time: data.departure_time,
-        arrival_date: data.arrival_date,
-        arrival_time: data.arrival_time,
-        price: data.price,
-        available_seats: data.available_seats,
-        distances: data.distances
+        ...data,
+        departure: data.departure,
+        arrival: data.arrival,
       })
     } catch (error) {
       console.error('Error fetching current assignment:', error)
@@ -410,10 +357,8 @@ export default function RoutesPage() {
     } else {
       setBusAssignment({
         bus_id: 0,
-        departure_date: '',
-        departure_time: '',
-        arrival_date: '',
-        arrival_time: '',
+        departure: null,
+        arrival: null,
         price: 0,
         available_seats: 0,
         distances: route.stops.slice(0, -1).map((stop, index) => ({
@@ -426,14 +371,11 @@ export default function RoutesPage() {
     setIsAssignBusDialogOpen(true)
   }
 
-  const handleDateChange = (field: 'departure_date' | 'arrival_date', date: Date | undefined) => {
-    if (date) {
-      setBusAssignment(prev => ({ ...prev, [field]: format(date, 'yyyy-MM-dd') }))
-    }
-  }
-
-  const handleTimeChange = (field: 'departure_time' | 'arrival_time', time: string) => {
-    setBusAssignment({ ...busAssignment, [field]: time })
+  const handleDateTimeChange = (field: 'departure' | 'arrival', value: string) => {
+    setBusAssignment(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
   const filteredRoutes = routes.filter(route =>
@@ -619,13 +561,13 @@ export default function RoutesPage() {
                                   <h4 className="text-sm font-semibold text-foreground">Assigned Bus Details</h4>
                                   <p className="text-sm text-foreground/90">Bus Number: {route.schedule_info.bus_number || 'N/A'}</p>
                                   <p className="text-sm text-foreground/90">
-                                    Departure: {route.schedule_info.departure_date && route.schedule_info.departure_time
-                                      ? `${format(new Date(route.schedule_info.departure_date), "PPP")} at ${route.schedule_info.departure_time}`
+                                    Departure: {route.schedule_info.departure
+                                      ? format(new Date(route.schedule_info.departure), "PPP 'at' p")
                                       : 'N/A'}
                                   </p>
                                   <p className="text-sm text-foreground/90">
-                                    Arrival: {route.schedule_info.arrival_date && route.schedule_info.arrival_time
-                                      ? `${format(new Date(route.schedule_info.arrival_date), "PPP")} at ${route.schedule_info.arrival_time}`
+                                    Arrival: {route.schedule_info.arrival
+                                      ? format(new Date(route.schedule_info.arrival), "PPP 'at' p")
                                       : 'N/A'}
                                   </p>
                                   <Button 
@@ -690,67 +632,19 @@ export default function RoutesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Departure Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !busAssignment.departure_date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {busAssignment.departure_date ? format(new Date(busAssignment.departure_date), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={busAssignment.departure_date ? new Date(busAssignment.departure_date) : undefined}
-                      onSelect={(date) => handleDateChange('departure_date', date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label>Departure Time</Label>
-                <TimeInput
-                  value={busAssignment.departure_time}
-                  onChange={(time) => handleTimeChange('departure_time', time)}
+                <Label>Departure</Label>
+                <Input
+                  type="datetime-local"
+                  value={busAssignment.departure || ''}
+                  onChange={(e) => handleDateTimeChange('departure', e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Arrival Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !busAssignment.arrival_date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {busAssignment.arrival_date ? format(new Date(busAssignment.arrival_date), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={busAssignment.arrival_date ? new Date(busAssignment.arrival_date) : undefined}
-                      onSelect={(date) => handleDateChange('arrival_date', date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label>Arrival Time</Label>
-                <TimeInput
-                  value={busAssignment.arrival_time}
-                  onChange={(time) => handleTimeChange('arrival_time', time)}
+                <Label>Arrival</Label>
+                <Input
+                  type="datetime-local"
+                  value={busAssignment.arrival || ''}
+                  onChange={(e) => handleDateTimeChange('arrival', e.target.value)}
                 />
               </div>
               <div className="space-y-2">

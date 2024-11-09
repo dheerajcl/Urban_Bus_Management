@@ -9,8 +9,8 @@ export async function GET() {
              (SELECT jsonb_build_object(
                'is_assigned', CASE WHEN sch.id IS NOT NULL THEN true ELSE false END,
                'bus_number', b.bus_number,
-               'departure_time', sch.departure_time,
-               'arrival_time', sch.arrival_time
+               'departure', sch.departure,
+               'arrival', sch.arrival
              )
              FROM schedules sch
              LEFT JOIN buses b ON sch.bus_id = b.id

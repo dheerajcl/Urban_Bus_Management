@@ -11,8 +11,8 @@ import { getUserEmail } from "@/lib/userStore"
 type Booking = {
   id: number
   route_name: string
-  departure_time: string
-  arrival_time: string
+  departure: string
+  arrival: string
   seats_booked: number
   total_price: string | number | null
 }
@@ -99,8 +99,8 @@ export default function DashboardPage() {
                   {bookings.map((booking) => (
                     <TableRow key={booking.id}>
                       <TableCell className="text-zinc-100">{booking.route_name}</TableCell>
-                      <TableCell className="text-zinc-100">{new Date(booking.departure_time).toLocaleString()}</TableCell>
-                      <TableCell className="text-zinc-100">{new Date(booking.arrival_time).toLocaleString()}</TableCell>
+                      <TableCell className="text-zinc-100">{new Date(booking.departure).toLocaleString()}</TableCell>
+                      <TableCell className="text-zinc-100">{new Date(booking.arrival).toLocaleString()}</TableCell>
                       <TableCell className="text-zinc-100">{booking.seats_booked}</TableCell>
                       <TableCell className="text-zinc-100">
                         {formatPrice(booking.total_price)}
