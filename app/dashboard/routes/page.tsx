@@ -2,28 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Search, Bus, RefreshCw, X } from 'lucide-react'
-// import { Calendar as CalendarIcon } from "lucide-react"
-// import { cn } from "@/lib/utils"
-// import { Calendar } from "@/components/ui/calendar"
-// import {
-//   Popover,
-//   PopoverContent,
-//   PopoverTrigger,
-// } from "@/components/ui/popover"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { format } from "date-fns"
-import { useToast } from "@/hooks/use-toast"
 import {
   Table,
   TableBody,
@@ -33,10 +13,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
@@ -45,6 +29,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
+import { format } from "date-fns"
+import { useToast } from "@/hooks/use-toast"
 
 export type ScheduleInfo = {
   is_assigned: boolean
@@ -125,8 +116,6 @@ export default function RoutesPage() {
         title: "Error",
         description: "Failed to fetch routes. Please try again later.",
         variant: "destructive",
-        className: "p-2 text-sm",
-        style: { minWidth: '200px' },
       })
     } finally {
       setLoading(false)
@@ -202,8 +191,6 @@ export default function RoutesPage() {
       toast({
         title: "Success",
         description: "Route added successfully",
-        className: "bg-green-700 text-white p-2 text-sm",
-        style: { minWidth: '200px' },
       });
     } catch (error) {
       console.error('Error adding route:', error);
@@ -211,8 +198,6 @@ export default function RoutesPage() {
         title: "Error",
         description: "Failed to add route. Please try again.",
         variant: "destructive",
-        className: "p-2 text-sm",
-        style: { minWidth: '200px' },
       });
     }
   };
@@ -237,8 +222,6 @@ export default function RoutesPage() {
       toast({
         title: "Success",
         description: "Route updated successfully",
-        className: "bg-green-700 text-white p-2 text-sm",
-        style: { minWidth: '200px' },
       });
     } catch (error) {
       console.error('Error updating route:', error);
@@ -246,8 +229,6 @@ export default function RoutesPage() {
         title: "Error",
         description: "Failed to update route. Please try again.",
         variant: "destructive",
-        className: "p-2 text-sm",
-        style: { minWidth: '200px' },
       });
     }
   };
@@ -264,8 +245,6 @@ export default function RoutesPage() {
       toast({
         title: "Success",
         description: "Route deleted successfully",
-        className: "bg-green-700 text-white p-2 text-sm",
-        style: { minWidth: '200px' },
       });
     } catch (error) {
       console.error('Error deleting route:', error);
@@ -273,8 +252,6 @@ export default function RoutesPage() {
         title: "Error",
         description: "Failed to delete route. Please try again.",
         variant: "destructive",
-        className: "p-2 text-sm",
-        style: { minWidth: '200px' },
       });
     }
   };
@@ -306,7 +283,6 @@ export default function RoutesPage() {
       toast({
         title: "Success",
         description: `Bus ${assigningRoute.schedule_info?.is_assigned ? 're' : ''}assigned successfully`,
-        className: "bg-green-700 text-white p-2 text-sm",
       })
 
       setIsAssignBusDialogOpen(false)
@@ -335,7 +311,6 @@ export default function RoutesPage() {
       toast({
         title: "Success",
         description: "Bus de-assigned successfully",
-        className: "bg-green-700 text-white p-2 text-sm",
       })
   
       loadRoutes()
@@ -385,227 +360,315 @@ export default function RoutesPage() {
   );
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <Card className="backdrop-blur-sm bg-background/95 shadow-lg">
-        <CardHeader className="border-b">
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-foreground bg-clip-text text-transparent">Route Management</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="relative w-64">
-              <Input
-                type="text"
-                placeholder="Search routes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-background/50 backdrop-blur-sm transition-all focus:bg-background"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                  <Plus className="mr-2 h-4 w-4" /> Add New Route
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[525px] backdrop-blur-md bg-background/95">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-semibold">Add New Route</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={newRoute.name}
-                      onChange={(e) => setNewRoute({ ...newRoute, name: e.target.value })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="source" className="text-right">
-                      Source
-                    </Label>
-                    <Input
-                      id="source"
-                      value={newRoute.source}
-                      onChange={(e) => setNewRoute({ ...newRoute, source: e.target.value })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="destination" className="text-right">
-                      Destination
-                    </Label>
-                    <Input
-                      id="destination"
-                      value={newRoute.destination}
-                      onChange={(e) => setNewRoute({ ...newRoute, destination: e.target.value })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="stops" className="text-right">
-                      Stops
-                    </Label>
-                    <div className="col-span-3 space-y-2">
-                      {newRoute.stops.map((stop, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Input
-                            value={stop.stop_name}
-                            onChange={(e) => {
-                              const updatedStops = [...newRoute.stops];
-                              updatedStops[index].stop_name = e.target.value;
-                              setNewRoute({ ...newRoute, stops: updatedStops });
-                            }}
-                            placeholder="Stop name"
-                          />
-                          <Input
-                            type="number"
-                            value={stop.stop_order}
-                            onChange={(e) => {
-                              const updatedStops = [...newRoute.stops];
-                              updatedStops[index].stop_order = parseInt(e.target.value);
-                              setNewRoute({ ...newRoute, stops: updatedStops });
-                            }}
-                            placeholder="Order"
-                            className="w-20"
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const updatedStops = newRoute.stops.filter((_, i) => i !== index);
-                              setNewRoute({ ...newRoute, stops: updatedStops });
-                            }}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Route Management</h1>
+      <div className="flex justify-between items-center mb-6">
+        <div className="relative w-64">
+          <Input
+            type="text"
+            placeholder="Search routes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        </div>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Add New Route
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Route</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">Name</Label>
+                <Input
+                  id="name"
+                  value={newRoute.name}
+                  onChange={(e) => setNewRoute({ ...newRoute, name: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="source" className="text-right">Source</Label>
+                <Input
+                  id="source"
+                  value={newRoute.source}
+                  onChange={(e) => setNewRoute({ ...newRoute, source: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="destination" className="text-right">Destination</Label>
+                <Input
+                  id="destination"
+                  value={newRoute.destination}
+                  onChange={(e) => setNewRoute({ ...newRoute, destination: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="stops" className="text-right">Stops</Label>
+                <div className="col-span-3 space-y-2">
+                  {newRoute.stops.map((stop, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <Input
+                        value={stop.stop_name}
+                        onChange={(e) => {
+                          const updatedStops = [...newRoute.stops];
+                          updatedStops[index].stop_name = e.target.value;
+                          setNewRoute({ ...newRoute, stops: updatedStops });
+                        }}
+                        placeholder="Stop name"
+                      />
+                      <Input
+                        type="number"
+                        value={stop.stop_order}
+                        onChange={(e) => {
+                          const updatedStops = [...newRoute.stops];
+                          updatedStops[index].stop_order = parseInt(e.target.value);
+                          setNewRoute({ ...newRoute, stops: updatedStops });
+                        }}
+                        placeholder="Order"
+                        className="w-20"
+                      />
                       <Button
-                        onClick={() => setNewRoute({
-                          ...newRoute,
-                          stops: [...newRoute.stops, { stop_name: '', stop_order: newRoute.stops.length + 1 }]
-                        })}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const updatedStops = newRoute.stops.filter((_, i) => i !== index);
+                          setNewRoute({ ...newRoute, stops: updatedStops });
+                        }}
                       >
-                        Add Stop
+                        Remove
                       </Button>
                     </div>
-                  </div>
+                  ))}
+                  <Button
+                    onClick={() => setNewRoute({
+                      ...newRoute,
+                      stops: [...newRoute.stops, { stop_name: '', stop_order: newRoute.stops.length + 1 }]
+                    })}
+                  >
+                    Add Stop
+                  </Button>
                 </div>
-                <DialogFooter>
-                  <Button type="submit" onClick={handleAddRoute}>Add Route</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-          {loading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
+              </div>
             </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50 backdrop-blur-sm">
-                    <TableHead className="font-semibold">Name</TableHead>
-                    <TableHead className="font-semibold">Source</TableHead>
-                    <TableHead className="font-semibold">Destination</TableHead>
-                    <TableHead className="font-semibold">Stops</TableHead>
-                    <TableHead className="font-semibold">Actions</TableHead>
-                    <TableHead className="font-semibold">Bus Status</TableHead>
+            <DialogFooter>
+              <Button type="submit" onClick={handleAddRoute}>Add Route</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="border rounded-md">
+        <div className="max-h-[calc(100vh-250px)] overflow-y-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="sticky top-0 bg-background">Name</TableHead>
+                <TableHead className="sticky top-0 bg-background">Source</TableHead>
+                <TableHead className="sticky top-0 bg-background">Destination</TableHead>
+                <TableHead className="sticky top-0 bg-background">Stops</TableHead>
+                <TableHead className="sticky top-0 bg-background">Actions</TableHead>
+                <TableHead className="sticky top-0 bg-background">Bus Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                [...Array(5)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Skeleton className="h-8 w-8" />
+                        <Skeleton className="h-8 w-8" />
+                      </div>
+                    </TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRoutes.map((route) => (
-                    <TableRow key={route.id} className="hover:bg-muted/50 transition-colors">
-                      <TableCell>{route.name}</TableCell>
-                      <TableCell>{route.source}</TableCell>
-                      <TableCell>{route.destination}</TableCell>
-                      <TableCell>{route.stops.length}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => {
-                            setEditingRoute(route)
-                            setIsEditDialogOpen(true)
-                          }}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDeleteRoute(route.id)}>
-                            <Trash2 className="h-4 w-4" />
+                ))
+              ) : (
+                filteredRoutes.map((route) => (
+                  <TableRow key={route.id}>
+                    <TableCell>{route.name}</TableCell>
+                    <TableCell>{route.source}</TableCell>
+                    <TableCell>{route.destination}</TableCell>
+                    <TableCell>{route.stops.length}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => {
+                          setEditingRoute(route)
+                          setIsEditDialogOpen(true)
+                        }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleDeleteRoute(route.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {route.schedule_info && route.schedule_info.is_assigned ? (
+                        <div className="flex items-center space-x-2">
+                          <HoverCard>
+                            <HoverCardTrigger asChild>
+                              <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-100 text-green-800 text-sm font-medium cursor-pointer">
+                                Bus Assigned
+                              </span>
+                            </HoverCardTrigger>
+                            <HoverCardContent className="w-80">
+                              <div className="space-y-1">
+                                <h4 className="text-sm font-semibold">Assigned Bus Details</h4>
+                                <p className="text-sm">Bus Number: {route.schedule_info.bus_number || 'N/A'}</p>
+                                <p className="text-sm">
+                                  Departure: {route.schedule_info.departure
+                                    ? format(new Date(route.schedule_info.departure), "PPP 'at' p")
+                                    : 'N/A'}
+                                </p>
+                                <p className="text-sm">
+                                  Arrival: {route.schedule_info.arrival
+                                    ? format(new Date(route.schedule_info.arrival), "PPP 'at' p")
+                                    : 'N/A'}
+                                </p>
+                              </div>
+                              <Button 
+                                variant="destructive" 
+                                size="sm" 
+                                className="mt-2 w-full"
+                                onClick={() => handleDeassignBus(route.id)}
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                De-assign Bus
+                              </Button>
+                            </HoverCardContent>
+                          </HoverCard>
+                          <Button variant="outline" size="sm" onClick={() => openAssignBusDialog(route)}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Reassign Bus
                           </Button>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {route.schedule_info && route.schedule_info.is_assigned ? (
-                          <div className="flex items-center space-x-2">
-                            <HoverCard>
-                              <HoverCardTrigger asChild>
-                                <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-100 text-green-800 text-sm font-medium cursor-pointer transition-colors hover:bg-green-200">
-                                  Bus Assigned
-                                </span>
-                              </HoverCardTrigger>
-                              <HoverCardContent 
-                                className="w-80 backdrop-blur-[20px] 
-                                  bg-gradient-to-b from-background to-background/95 
-                                  border border-border 
-                                  shadow-[0_0_15px_rgba(0,0,0,0.2)] 
-                                  rounded-lg p-4 
-                                  dark:bg-gradient-to-b dark:from-gray-900 dark:to-black-900/95">
-                                <div className="space-y-3 relative z-10">
-                                  <h4 className="text-sm font-semibold text-foreground">Assigned Bus Details</h4>
-                                  <p className="text-sm text-foreground/90">Bus Number: {route.schedule_info.bus_number || 'N/A'}</p>
-                                  <p className="text-sm text-foreground/90">
-                                    Departure: {route.schedule_info.departure
-                                      ? format(new Date(route.schedule_info.departure), "PPP 'at' p")
-                                      : 'N/A'}
-                                  </p>
-                                  <p className="text-sm text-foreground/90">
-                                    Arrival: {route.schedule_info.arrival
-                                      ? format(new Date(route.schedule_info.arrival), "PPP 'at' p")
-                                      : 'N/A'}
-                                  </p>
-                                  <Button 
-                                    variant="destructive" 
-                                    size="sm" 
-                                    className="w-full mt-4 hover:bg-destructive/90 transition-colors"
-                                    onClick={() => handleDeassignBus(route.id)}
-                                  >
-                                    <X className="h-4 w-4 mr-2" />
-                                    De-assign Bus
-                                  </Button>
-                                </div>
-                              </HoverCardContent>
-                            </HoverCard>
-                            <Button variant="outline" size="sm" onClick={() => openAssignBusDialog(route)}>
-                              <RefreshCw className="h-4 w-4 mr-2" />
-                              Reassign Bus
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button variant="outline" size="sm" onClick={() => openAssignBusDialog(route)}>
-                            <Bus className="h-4 w-4 mr-2" />
-                            Assign Bus
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={() => openAssignBusDialog(route)}>
+                          <Bus className="h-4 w-4 mr-2" />
+                          Assign Bus
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
       
-      {/* Assign/Reassign Bus Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Route</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-name" className="text-right">Name</Label>
+              <Input
+                id="edit-name"
+                value={editingRoute?.name || ''}
+                onChange={(e) => setEditingRoute(editingRoute ? { ...editingRoute, name: e.target.value } : null)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-source" className="text-right">Source</Label>
+              <Input
+                id="edit-source"
+                value={editingRoute?.source || ''}
+                onChange={(e) => setEditingRoute(editingRoute ? { ...editingRoute, source: e.target.value } : null)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-destination" className="text-right">Destination</Label>
+              <Input
+                id="edit-destination"
+                value={editingRoute?.destination || ''}
+                onChange={(e) => setEditingRoute(editingRoute ? { ...editingRoute, destination: e.target.value } : null)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-stops" className="text-right">Stops</Label>
+              <div className="col-span-3 space-y-2">
+                {editingRoute?.stops.map((stop, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <Input
+                      value={stop.stop_name}
+                      onChange={(e) => {
+                        if (editingRoute) {
+                          const updatedStops = [...editingRoute.stops];
+                          updatedStops[index].stop_name = e.target.value;
+                          setEditingRoute({ ...editingRoute, stops: updatedStops });
+                        }
+                      }}
+                      placeholder="Stop name"
+                    />
+                    <Input
+                      type="number"
+                      value={stop.stop_order}
+                      onChange={(e) => {
+                        if (editingRoute) {
+                          const updatedStops = [...editingRoute.stops];
+                          updatedStops[index].stop_order = parseInt(e.target.value);
+                          setEditingRoute({ ...editingRoute, stops: updatedStops });
+                        }
+                      }}
+                      placeholder="Order"
+                      className="w-20"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (editingRoute) {
+                          const updatedStops = editingRoute.stops.filter((_, i) => i !== index);
+                          setEditingRoute({ ...editingRoute, stops: updatedStops });
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  onClick={() => {
+                    if (editingRoute) {
+                      setEditingRoute({
+                        ...editingRoute,
+                        stops: [...editingRoute.stops, { stop_name: '', stop_order: editingRoute.stops.length + 1 }]
+                      });
+                    }
+                  }}
+                >
+                  Add Stop
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" onClick={handleEditRoute}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isAssignBusDialogOpen} onOpenChange={setIsAssignBusDialogOpen}>
-        <DialogContent className="sm:max-w-[525px] backdrop-blur-md bg-background/95">
+        <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-semibold">
               {assigningRoute?.schedule_info?.is_assigned ? 'Reassign' : 'Assign'} Bus to Route: {assigningRoute?.name}
@@ -716,112 +779,6 @@ export default function RoutesPage() {
               </Button>
             </DialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Route Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[525px] backdrop-blur-md bg-background/95">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-semibold">Edit Route</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="edit-name"
-                value={editingRoute?.name || ''}
-                onChange={(e) => setEditingRoute(editingRoute ? { ...editingRoute, name: e.target.value } : null)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-source" className="text-right">
-                Source
-              </Label>
-              <Input
-                id="edit-source"
-                value={editingRoute?.source || ''}
-                onChange={(e) => setEditingRoute(editingRoute ? { ...editingRoute, source: e.target.value } : null)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-destination" className="text-right">
-                Destination
-              </Label>
-              <Input
-                id="edit-destination"
-                value={editingRoute?.destination || ''}
-                onChange={(e) => setEditingRoute(editingRoute ? { ...editingRoute, destination: e.target.value } : null)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-stops" className="text-right">
-                Stops
-              </Label>
-              <div className="col-span-3 space-y-2">
-                {editingRoute?.stops.map((stop, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Input
-                      value={stop.stop_name}
-                      onChange={(e) => {
-                        if (editingRoute) {
-                          const updatedStops = [...editingRoute.stops];
-                          updatedStops[index].stop_name = e.target.value;
-                          setEditingRoute({ ...editingRoute, stops: updatedStops });
-                        }
-                      }}
-                      placeholder="Stop name"
-                    />
-                    <Input
-                      type="number"
-                      value={stop.stop_order}
-                      onChange={(e) => {
-                        if (editingRoute) {
-                          const updatedStops = [...editingRoute.stops];
-                          updatedStops[index].stop_order = parseInt(e.target.value);
-                          setEditingRoute({ ...editingRoute, stops: updatedStops });
-                        }
-                      }}
-                      placeholder="Order"
-                      className="w-20"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (editingRoute) {
-                          const updatedStops = editingRoute.stops.filter((_, i) => i !== index);
-                          setEditingRoute({ ...editingRoute, stops: updatedStops });
-                        }
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  onClick={() => {
-                    if (editingRoute) {
-                      setEditingRoute({
-                        ...editingRoute,
-                        stops: [...editingRoute.stops, { stop_name: '', stop_order: editingRoute.stops.length + 1 }]
-                      });
-                    }
-                  }}
-                >
-                  Add Stop
-                </Button>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="submit" onClick={handleEditRoute}>Save Changes</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

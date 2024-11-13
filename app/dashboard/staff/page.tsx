@@ -203,9 +203,6 @@ export default function StaffPage() {
                   <Skeleton className="h-4 w-28" />
                 </TableCell>
                 <TableCell>
-                  <Skeleton className="h-4 w-12" />
-                </TableCell>
-                <TableCell>
                   <div className="flex space-x-2">
                     <Skeleton className="h-8 w-8" />
                     <Skeleton className="h-8 w-8" />
@@ -308,7 +305,7 @@ export default function StaffPage() {
             <TableHead>Role</TableHead>
             <TableHead>License Number</TableHead>
             <TableHead>Phone Number</TableHead>
-            <TableHead>Work Rate</TableHead>
+            {/* <TableHead>Work Rate</TableHead> */}
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -319,12 +316,14 @@ export default function StaffPage() {
               <TableCell>{s.role_name}</TableCell>
               <TableCell>{s.license_number || 'N/A'}</TableCell>
               <TableCell>
-                <a href={`tel:${s.contact_number}`}>
-                  <Phone className="h-5 w-5 text-muted-foreground" />
-                </a>
-                {s.contact_number}
+                <div className="flex items-center space-x-2">
+                  <a href={`tel:${s.contact_number}`}>
+                    <Phone className="h-5 w-5 text-muted-foreground" />
+                  </a>
+                  <span>{s.contact_number}</span>
+                </div>
               </TableCell>
-              <TableCell>{typeof s.work_rate === 'number' ? s.work_rate.toFixed(2) : '0.00'}%</TableCell>
+              {/* <TableCell>{typeof s.work_rate === 'number' ? s.work_rate.toFixed(2) : '0.00'}%</TableCell> */}
               <TableCell>
                 <div className="flex space-x-2">
                   <Button variant="outline" size="sm" onClick={() => {

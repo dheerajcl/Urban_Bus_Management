@@ -9,8 +9,13 @@ const pool = new Pool({
 export async function GET() {
   try {
     const result = await query(`
-      SELECT s.id, s.name, s.contact_number, s.license_number, s.employment_date, r.role_name,
-             calculate_utilization_rate(COALESCE(sr.role_id, 0)) AS work_rate
+      SELECT s.id, s.name, s.contact_number, s.license_number, s.employment_date,
+             r.role_name,
+             COALESCE(
+               (SELECT COUNT(*) FROM bus_staff_assignments bsa
+                WHERE bsa.driver_id = s.id OR bsa.conductor_id = s.id OR bsa.cleaner_id = s.id),
+               0
+             ) AS assignment_count
       FROM staff s
       LEFT JOIN staff_roles sr ON s.id = sr.staff_id
       LEFT JOIN roles r ON sr.role_id = r.id
