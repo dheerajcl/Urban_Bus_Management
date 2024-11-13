@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
-import { Loader } from "lucide-react"
-import { getUserEmail } from "@/lib/userStore"
+import { Loader, LogOut } from "lucide-react"
+import { getUserEmail, clearUserEmail } from "@/lib/userStore"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type Booking = {
   id: number
@@ -57,6 +59,11 @@ export default function DashboardPage() {
     return isNaN(numPrice) ? 'N/A' : `₹${numPrice.toFixed(2)}`
   }
 
+  const handleLogout = () => {
+    clearUserEmail()
+    router.push('/')
+  }
+
   if (!userEmail) {
     router.push('/user/login')
     return null
@@ -64,7 +71,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-50">
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
         <Loader className="animate-spin mr-2" size={24} />
         <p>Loading your bookings...</p>
       </div>
@@ -72,39 +79,56 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-zinc-50">
-      <div className="flex-1 ml-24 mr-24 p-8">
-        <h1 className="text-3xl font-bold mb-2">Welcome!</h1>
-        <p className="text-zinc-400 mb-8">Email: {userEmail}</p>
-        <Card className="bg-zinc-900 border-zinc-800">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="border-b border-border">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <div className="flex items-center space-x-4">
+            <Avatar>
+              <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${userEmail}`} />
+              <AvatarFallback>{userEmail.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <Button variant="ghost" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </header>
+      <main className="flex-grow container mx-auto px-4 py-8">
+        <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-zinc-100">Your Bookings</CardTitle>
-            <CardDescription className="text-zinc-400">Here are your recent bus bookings</CardDescription>
+            <CardTitle>Welcome back!</CardTitle>
+            <CardDescription>{userEmail}</CardDescription>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Bookings</CardTitle>
+            <CardDescription>Here are your recent bus bookings</CardDescription>
           </CardHeader>
           <CardContent>
             {bookings.length === 0 ? (
-              <p className="text-zinc-400">You have no bookings yet.</p>
+              <p className="text-muted-foreground">You have no bookings yet.</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-zinc-300">Route</TableHead>
-                    <TableHead className="text-zinc-300">Departure</TableHead>
-                    <TableHead className="text-zinc-300">Arrival</TableHead>
-                    <TableHead className="text-zinc-300">Seats</TableHead>
-                    <TableHead className="text-zinc-300">Total Price</TableHead>
+                    <TableHead>Route</TableHead>
+                    <TableHead>Departure</TableHead>
+                    <TableHead>Arrival</TableHead>
+                    <TableHead>Seats</TableHead>
+                    <TableHead>Total Price</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {bookings.map((booking) => (
                     <TableRow key={booking.id}>
-                      <TableCell className="text-zinc-100">{booking.route_name}</TableCell>
-                      <TableCell className="text-zinc-100">{new Date(booking.departure).toLocaleString()}</TableCell>
-                      <TableCell className="text-zinc-100">{new Date(booking.arrival).toLocaleString()}</TableCell>
-                      <TableCell className="text-zinc-100">{booking.seats_booked}</TableCell>
-                      <TableCell className="text-zinc-100">
-                        {formatPrice(booking.total_price)}
-                      </TableCell>
+                      <TableCell className="font-medium">{booking.route_name}</TableCell>
+                      <TableCell>{new Date(booking.departure).toLocaleString()}</TableCell>
+                      <TableCell>{new Date(booking.arrival).toLocaleString()}</TableCell>
+                      <TableCell>{booking.seats_booked}</TableCell>
+                      <TableCell>{formatPrice(booking.total_price)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -112,7 +136,7 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   )
 }

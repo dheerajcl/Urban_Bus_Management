@@ -34,7 +34,7 @@ export default function DashboardLayout({
 
   const handleLogout = async () => {
     await logout()
-    router.push('/admin/login')
+    router.push('/')
   }
 
   const isActive = (path: string) => pathname === path

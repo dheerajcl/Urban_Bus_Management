@@ -290,7 +290,7 @@ export default function LandingPage() {
           <div className="hidden md:flex space-x-8 items-center">
             <Link href="#features" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">Features</Link>
             <Link href="#about" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">About</Link>
-            <Link href="#contact" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">Contact</Link>
+            {/* <Link href="#contact" className="text-zinc-400 font-medium transition-colors duration-300 hover:text-white">Contact</Link> */}
             {isLoggedIn ? (
               <>
                 <Link href="/user/dashboard">
@@ -403,7 +403,7 @@ export default function LandingPage() {
                 <CardContent className="p-7">
                   <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
                     <div className="flex-1 relative">
-                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/80" />
+                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/80 w-5" />
                       <Input
                         type="text"
                         placeholder="From"
@@ -432,7 +432,7 @@ export default function LandingPage() {
                       )}
                     </div>
                     <div className="flex-1 relative">
-                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/80" />
+                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/80 w-5" />
                       <Input
                         type="text"
                         placeholder="To"
