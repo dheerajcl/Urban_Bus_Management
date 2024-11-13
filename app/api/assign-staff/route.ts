@@ -61,7 +61,12 @@ export async function POST(request: NextRequest) {
     // Commit the transaction
     await query('COMMIT');
 
-    return NextResponse.json({ success: true, message: 'Staff assigned successfully' });
+    // Use the result to return the updated assignment
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Staff assigned successfully',
+      assignment: result.rows[0]
+    });
   } catch (error) {
     // Rollback the transaction in case of error
     await query('ROLLBACK');
