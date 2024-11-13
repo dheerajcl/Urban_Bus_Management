@@ -8,15 +8,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from "@/hooks/use-toast"
+import { BusResult } from '@/app/page'
 
 type BookingModalProps = {
-  busId: number
+  bus: BusResult
   availableSeats: number
   onClose: () => void
-  onBook: (busId: number, seats: number, email: string, name: string) => Promise<void>
+  onBook: (busId: number, routeId: number, arrival: string, seats: number, email: string, name: string) => Promise<void>
 }
-
-const BookingModal: React.FC<BookingModalProps> = ({ busId, availableSeats, onClose, onBook }) => {
+const BookingModal: React.FC<BookingModalProps> = ({ bus, availableSeats, onClose, onBook }) => {
   const { toast } = useToast()
   const [seats, setSeats] = useState(1)
   const [email, setEmail] = useState('')
@@ -27,6 +27,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ busId, availableSeats, onCl
     email?: string
     name?: string
   }>({})
+  const [apiCallCounter, setApiCallCounter] = useState(0) // Counter variable
 
   const validateForm = () => {
     const newErrors: {
@@ -56,9 +57,15 @@ const BookingModal: React.FC<BookingModalProps> = ({ busId, availableSeats, onCl
       return
     }
 
+    if (apiCallCounter >= 1) {
+      return // Prevent multiple API calls
+    }
+
     setIsLoading(true)
+    setApiCallCounter(apiCallCounter + 1) // Increment the counter
+
     try {
-      await onBook(busId, seats, email, name)
+      await onBook(bus.id, bus.route_id, bus.arrival, seats, email, name)
     } catch (error) {
       toast({
         title: 'Booking Failed',
@@ -67,6 +74,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ busId, availableSeats, onCl
       })
     } finally {
       setIsLoading(false)
+      setApiCallCounter(0) // Reset the counter after the API call
     }
   }
 
