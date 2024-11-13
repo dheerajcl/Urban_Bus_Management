@@ -333,7 +333,7 @@ export default function StaffPage() {
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => handleDeleteStaff(s.id)}>
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
               </TableCell>
