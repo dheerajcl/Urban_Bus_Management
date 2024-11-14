@@ -166,7 +166,8 @@ export default function LandingPage() {
     setIsBookingModalOpen(false)
   }
 
-  const handleBook = async (busId: number, routeId: number, arrival: string, seats: number, email: string, name: string) => {
+  // const handleBook = async (busId: number, routeId: number, arrival: string, seats: number, email: string, name: string) => {
+    const handleBook = async (busId: number, routeId: number, source: string, destination: string, arrival: string, seats: number, email: string, name: string): Promise<void> => {
     // const [apiCallCounter, setApiCallCounter] = useState(0); // Counter variable
 
     // if (apiCallCounter >= 1) {
@@ -693,13 +694,16 @@ export default function LandingPage() {
       </footer>
 
       {isBookingModalOpen && selectedBus && (
-        <BookingModal
-          bus={selectedBus}
-          availableSeats={selectedBus.available_seats}
-          onClose={handleCloseBookingModal}
-          onBook={handleBook}
-        />
-      )}
+      <BookingModal
+        bus={selectedBus}
+        availableSeats={selectedBus.available_seats}
+        source={source}
+        destination={destination}
+        onClose={handleCloseBookingModal}
+        onBook={handleBook}
+      />
+    )}
+
     </div>
   )
 }
@@ -715,3 +719,4 @@ function FeatureCard({ icon, title, description }: Feature) {
     </div>
   )
 }
+
