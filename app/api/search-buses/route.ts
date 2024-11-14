@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
