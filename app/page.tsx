@@ -17,16 +17,18 @@ import BookingModal from '@/components/BookingModal'
 // import { useAuth } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 
-type BusResult = {
-  id: number
-  type: string
-  price: string
-  capacity: number
-  departure: string
-  arrival: string
-  route_name: string
-  available_seats: number
-}
+
+export type BusResult = {
+  id: number;
+  type: string;
+  price: string;
+  capacity: number;
+  departure: string;
+  arrival: string;
+  route_name: string;
+  available_seats: number;
+  route_id: number;
+};
 
 type Feature = {
   icon: React.ReactNode
@@ -83,13 +85,11 @@ export default function LandingPage() {
   }, [])
 
   useEffect(() => {
-    // Check if user is logged in (e.g., by checking localStorage or a cookie)
     const userToken = localStorage.getItem('userToken')
     setIsLoggedIn(!!userToken)
   }, [])
 
   const handleLogout = () => {
-    // Clear user token and update state
     localStorage.removeItem('userToken')
     setIsLoggedIn(false)
   }
@@ -110,27 +110,41 @@ export default function LandingPage() {
     }
   }
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     if (!source || !destination || !date) {
       setError('Please fill in all fields')
       return
     }
-
+  
     setIsLoading(true)
     setError(null)
-
+  
     const searchParams = new URLSearchParams({
       source,
       destination,
       date: format(date, 'yyyy-MM-dd')
     })
-
+  
     try {
       const response = await fetch(`/api/search-buses?${searchParams}`)
+      console.log('Search API Response:', response)
       if (!response.ok) throw new Error('Failed to fetch bus results')
       const data = await response.json()
-      setBusResults(data)
+      const mappedData = data.map((bus: any) => ({
+        id: bus.bus_id,
+        type: bus.type,
+        price: bus.price,
+        capacity: bus.capacity,
+        departure: bus.departure,
+        arrival: bus.arrival,
+        route_name: bus.route_name,
+        available_seats: bus.available_seats,
+        route_id: bus.route_id,
+      }));
+      console.log('Bus Results Data:', data)
+  
+      setBusResults(mappedData)
       if (data.length > 0 && resultsRef.current) {
         resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -152,48 +166,61 @@ export default function LandingPage() {
     setIsBookingModalOpen(false)
   }
 
-  const handleBook = async (busId: number, seats: number, email: string, name: string) => {
+  const handleBook = async (busId: number, routeId: number, arrival: string, seats: number, email: string, name: string) => {
+    // const [apiCallCounter, setApiCallCounter] = useState(0); // Counter variable
+
+    // if (apiCallCounter >= 1) {
+    //   console.log('API call prevented, counter:', apiCallCounter);
+    //   return; // Prevent multiple API calls
+    // }
     try {
-      const response = await fetch(`/api/book`, {
+      const pricePerSeat = parseFloat(busResults.find(bus => bus.id === busId)?.price || '0');
+      const bookingData = {
+        busId,
+        routeId,
+        arrival,
+        seats,
+        email,
+        name,
+        pricePerSeat,
+      };
+      console.log('handleBook - Data being sent to API:', bookingData);
+  
+      const response = await fetch('/api/book', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ busId, seats, email, name })
-      })
-  
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData),
+      });
       if (!response.ok) {
-        throw new Error('Failed to book seats')
+        throw new Error('Failed to book seats');
       }
-  
-      const data = await response.json()
-      console.log('Booking Response:', data)
-  
-      // Update bus results
-      setBusResults((prevResults) =>
-        prevResults.map((bus) =>
-          bus.id === busId ? { ...bus, available_seats: bus.available_seats - seats } : bus
-        )
-      )
-  
-      handleCloseBookingModal()
-  
-      // Check if totalPrice exists and is a number
-      const totalPrice = typeof data.totalPrice === 'number' ? data.totalPrice : 0
-  
-      // Show success message
+      // setApiCallCounter(apiCallCounter + 1); // Increment counter
+      const data = await response.json();
+      console.log('handleBook - Response from API:', data);
+      handleCloseBookingModal();
+      const totalPrice = typeof data.totalPrice === 'number' ? data.totalPrice : 0;
       toast({
         title: 'Booking Successful',
         description: `Total price: ₹${totalPrice.toFixed(2)}`,
         className: "bg-green-700 text-white p-2 text-sm",
-      })
+      });
+      await handleSearch();
     } catch (error) {
-      console.error('Booking error:', error)
+      console.error('Booking error:', error);
       toast({
         title: 'Booking Failed',
         description: 'An error occurred while booking. Please try again.',
         variant: "destructive",
-      })
+      });
     }
-  }
+    // finally {
+    //   setApiCallCounter(0); // Reset the counter after the API call
+    //   console.log('API call completed, counter reset to:', 0);
+    // }
+  };
+
 
   const features: Feature[] = [
     {
@@ -667,7 +694,7 @@ export default function LandingPage() {
 
       {isBookingModalOpen && selectedBus && (
         <BookingModal
-          busId={selectedBus.id}
+          bus={selectedBus}
           availableSeats={selectedBus.available_seats}
           onClose={handleCloseBookingModal}
           onBook={handleBook}
