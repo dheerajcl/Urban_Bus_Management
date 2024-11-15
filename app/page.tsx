@@ -131,9 +131,24 @@ export default function LandingPage() {
     try {
       const response = await fetch(`/api/search-buses?${searchParams}`)
       console.log('Search API Response:', response)
+    
+
       if (!response.ok) throw new Error('Failed to fetch bus results')
+        
       const data = await response.json()
-      const mappedData = data.map((bus: any) => ({
+      interface BusData {
+        bus_id: number;
+        type: string;
+        price: number;
+        capacity: number;
+        departure: string;
+        arrival: string;
+        route_name: string;
+        available_seats: number;
+        route_id: number;
+      }
+
+      const mappedData = data.map((bus: BusData) => ({
         id: bus.bus_id,
         type: bus.type,
         price: bus.price,
@@ -145,7 +160,6 @@ export default function LandingPage() {
         route_id: bus.route_id,
       }));
       console.log('Bus Results Data:', data)
-  
       setBusResults(mappedData)
       if (data.length > 0 && resultsRef.current) {
         resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -168,7 +182,7 @@ export default function LandingPage() {
     setIsBookingModalOpen(false)
   }
 
-  const handleBook = async (busId: number, routeId: number, arrival: string, seats: number, email: string, name: string) => {
+    const handleBook = async (busId: number, routeId: number, source: string, destination: string, arrival: string, seats: number, email: string, name: string): Promise<void> => {
     // const [apiCallCounter, setApiCallCounter] = useState(0); // Counter variable
 
     // if (apiCallCounter >= 1) {
@@ -695,13 +709,16 @@ export default function LandingPage() {
       </footer>
 
       {isBookingModalOpen && selectedBus && (
-        <BookingModal
-          bus={selectedBus}
-          availableSeats={selectedBus.available_seats}
-          onClose={handleCloseBookingModal}
-          onBook={handleBook}
-        />
-      )}
+      <BookingModal
+        bus={selectedBus}
+        availableSeats={selectedBus.available_seats}
+        source={source}
+        destination={destination}
+        onClose={handleCloseBookingModal}
+        onBook={handleBook}
+      />
+    )}
+
     </div>
   )
 }
@@ -717,3 +734,4 @@ function FeatureCard({ icon, title, description }: Feature) {
     </div>
   )
 }
+

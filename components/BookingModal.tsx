@@ -10,13 +10,24 @@ import { Label } from '@/components/ui/label'
 import { useToast } from "@/hooks/use-toast"
 import { BusResult } from '@/app/page'
 
+// type BookingModalProps = {
+//   bus: BusResult
+//   availableSeats: number
+//   onClose: () => void
+//   onBook: (busId: number, routeId: number, arrival: string, seats: number, email: string, name: string) => Promise<void>
+// }
+
+
 type BookingModalProps = {
   bus: BusResult
   availableSeats: number
+  source: string
+  destination: string
   onClose: () => void
-  onBook: (busId: number, routeId: number, arrival: string, seats: number, email: string, name: string) => Promise<void>
+  onBook: (busId: number, routeId: number, source: string, destination: string, arrival: string, seats: number, email: string, name: string) => Promise<void>
 }
-const BookingModal: React.FC<BookingModalProps> = ({ bus, availableSeats, onClose, onBook }) => {
+
+const BookingModal: React.FC<BookingModalProps> = ({bus, availableSeats, source, destination, onClose, onBook}) => {
   const { toast } = useToast()
   const [seats, setSeats] = useState(1)
   const [email, setEmail] = useState('')
@@ -64,15 +75,25 @@ const BookingModal: React.FC<BookingModalProps> = ({ bus, availableSeats, onClos
     setIsLoading(true)
     setApiCallCounter(apiCallCounter + 1) // Increment the counter
 
+    // try {
+    //   await onBook(bus.id, bus.route_id, bus.arrival, seats, email, name)
+    // } catch (error) {
+    //   toast({
+    //     title: 'Booking Failed',
+    //     description: 'An error occurred while booking. Please try again.',
+    //     variant: "destructive",
+    //   })
+    // } 
     try {
-      await onBook(bus.id, bus.route_id, bus.arrival, seats, email, name)
+      await onBook(bus.id, bus.route_id, source, destination, bus.arrival, seats, email, name)
     } catch (error) {
       toast({
         title: 'Booking Failed',
         description: 'An error occurred while booking. Please try again.',
         variant: "destructive",
       })
-    } finally {
+    } 
+    finally {
       setIsLoading(false)
       setApiCallCounter(0) // Reset the counter after the API call
     }
