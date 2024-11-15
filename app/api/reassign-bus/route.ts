@@ -5,14 +5,24 @@ export async function PUT(request: NextRequest) {
   try {
     const { route_id, bus_id, departure, arrival, available_seats, distances } = await request.json()
 
-    // Check if the bus exists and get its details
     const busResult = await query('SELECT id, capacity, bus_number FROM buses WHERE id = $1', [bus_id])
     if (busResult.rows.length === 0) {
       return NextResponse.json({ message: 'Bus not found' }, { status: 404 })
     }
-    const { bus_number } = busResult.rows[0]
+    const departureDate = new Date(departure)
+    const arrivalDate = new Date(arrival)
+    if (arrivalDate <= departureDate) {
+      return NextResponse.json({ 
+        message: 'Arrival time must be after departure time' 
+      }, { status: 400 })
+    }
 
-    // Start a transaction
+    if (available_seats > busResult.rows[0].capacity) {
+      return NextResponse.json({ 
+        message: `Available seats cannot exceed bus capacity (${busResult.rows[0].capacity})` 
+      }, { status: 400 })
+    }
+    const { bus_number } = busResult.rows[0]
     await query('BEGIN')
 
     try {

@@ -9,6 +9,21 @@ export async function POST(request: NextRequest) {
     if (busResult.rows.length === 0) {
       return NextResponse.json({ message: 'Bus not found' }, { status: 404 })
     }
+
+    const departureDate = new Date(departure)
+    const arrivalDate = new Date(arrival)
+    if (arrivalDate <= departureDate) {
+      return NextResponse.json({ 
+        message: 'Arrival time must be after departure time' 
+      }, { status: 400 })
+    }
+
+    if (available_seats > busResult.rows[0].capacity) {
+      return NextResponse.json({ 
+        message: `Available seats cannot exceed bus capacity (${busResult.rows[0].capacity})` 
+      }, { status: 400 })
+    }
+
     const { bus_number } = busResult.rows[0]
 
     const assignmentCheck = await query('SELECT id FROM schedules WHERE bus_id = $1', [bus_id])
