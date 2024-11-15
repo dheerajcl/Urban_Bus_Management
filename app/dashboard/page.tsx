@@ -209,7 +209,7 @@ async function DashboardContent() {
                 <div key={index} className="flex items-center">
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={`https://avatar.vercel.sh/${staff.name}.png`} alt={staff.name} />
-                    <AvatarFallback>{staff.name.split(' ').map((n) => n[0]).join('')}</AvatarFallback>
+                    <AvatarFallback>{staff.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
                   </Avatar>
                   <div className="ml-4 space-y-1">
                     <p className="text-sm font-medium leading-none">{staff.name}</p>

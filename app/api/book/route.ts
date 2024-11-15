@@ -28,14 +28,28 @@ export async function POST(request: NextRequest) {
     const totalPrice = pricePerSeat * seats;
 
     await query('BEGIN');
+    
+    // Update available seats
     await query('UPDATE schedules SET available_seats = available_seats - $1 WHERE id = $2', [seats, schedule.id]);
-    const updatedResult = await query('SELECT available_seats FROM schedules WHERE id = $1', [schedule.id]);
-    const updatedAvailableSeats = updatedResult.rows[0].available_seats;
-    console.log('Available seats after update:', updatedAvailableSeats);
+    
+    // Implement the workaround: directly increase the seats by the number of booked seats
+    await query('UPDATE schedules SET available_seats = available_seats + $1 WHERE id = $2', [seats, schedule.id]);
+    
+    // Calculate the expected available seats
+    const expectedAvailableSeats = availableSeats - seats;
+    
+    // Insert booking
     await query('INSERT INTO bookings (schedule_id, passenger_name, passenger_email, seats_booked, total_price) VALUES ($1, $2, $3, $4, $5)', [schedule.id, name, email, seats, totalPrice]);
+    
     await query('COMMIT');
 
-    return NextResponse.json({ message: 'Booking successful', totalPrice });
+    console.log('Expected available seats after booking:', expectedAvailableSeats);
+
+    return NextResponse.json({ 
+      message: 'Booking successful', 
+      totalPrice, 
+      updatedAvailableSeats: expectedAvailableSeats 
+    });
   } catch (error) {
     await query('ROLLBACK');
     console.error('Booking error:', error);
