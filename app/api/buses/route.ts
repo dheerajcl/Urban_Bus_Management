@@ -1,9 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// export async function GET() {
+//   try {
+//     const result = await query('SELECT * FROM buses');
+//     return NextResponse.json(result.rows);
+//   } catch (error) {
+//     console.error('Error fetching buses:', error);
+//     return NextResponse.json({ error: 'Failed to fetch buses' }, { status: 500 });
+//   }
+// }
+
 export async function GET() {
   try {
-    const result = await query('SELECT * FROM buses');
+    const result = await query(`
+      SELECT b.*,
+        CASE WHEN EXISTS (
+          SELECT 1 
+          FROM bus_staff_assignments bsa 
+          WHERE bsa.bus_id = b.id 
+          AND (
+            bsa.driver_id IS NOT NULL OR 
+            bsa.conductor_id IS NOT NULL OR 
+            bsa.cleaner_id IS NOT NULL
+          )
+        ) THEN true 
+        ELSE false 
+        END as staff_assigned
+      FROM buses b
+    `);
     return NextResponse.json(result.rows);
   } catch (error) {
     console.error('Error fetching buses:', error);

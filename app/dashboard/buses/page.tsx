@@ -43,10 +43,12 @@ type Bus = {
   staff_assigned: boolean
 }
 
-type StaffAssignment = {
-  driverName: string
-  conductorName: string
-  cleanerName: string
+
+//change 1
+type StaffMember = {
+  id: number
+  name: string
+  role_name: string
 }
 
 export default function BusesPage() {
@@ -57,6 +59,8 @@ export default function BusesPage() {
   const [isAssignStaffDialogOpen, setIsAssignStaffDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  //new
+  const [staffLoading, setStaffLoading] = useState(false);
   const [newBus, setNewBus] = useState<Omit<Bus, 'id' | 'staff_assigned'>>({
     operator_id: 1,
     bus_number: '',
@@ -67,16 +71,46 @@ export default function BusesPage() {
   })
   const [editingBus, setEditingBus] = useState<Bus | null>(null)
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null)
-  const [staffAssignment, setStaffAssignment] = useState<StaffAssignment>({
-    driverName: '',
-    conductorName: '',
-    cleanerName: ''
+
+  const [availableStaff, setAvailableStaff] = useState<StaffMember[]>([])
+  const [staffAssignment, setStaffAssignment] = useState({
+    driverId: '',
+    conductorId: '',
+    cleanerId: ''
   })
+
   const [assignmentError, setAssignmentError] = useState('')
 
   useEffect(() => {
     fetchBuses()
   }, [])
+
+  const fetchAvailableStaff = async (busId?: number) => {
+    try {
+      setStaffLoading(true);
+      const response = await fetch(`/api/available-staff${busId ? `?busId=${busId}` : ''}`);
+      if (!response.ok) throw new Error('Failed to fetch available staff');
+      const data = await response.json();
+      setAvailableStaff(data);
+    } catch (error) {
+      console.error('Error fetching available staff:', error);
+      setAssignmentError('Failed to fetch available staff');
+    } finally {
+      setStaffLoading(false);
+    }
+  }
+
+  const fetchCurrentAssignments = async (busId: number) => {
+    try {
+      const response = await fetch(`/api/bus-assignments?busId=${busId}`);
+      if (!response.ok) throw new Error('Failed to fetch current assignments');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching current assignments:', error);
+      return null;
+    }
+  }
 
   const fetchBuses = async () => {
     try {
@@ -191,44 +225,76 @@ export default function BusesPage() {
     }
   }
 
+ 
+
+const openAssignStaffDialog = async (bus: Bus) => {
+  setSelectedBus(bus);
+  setIsAssignStaffDialogOpen(true);
+  setStaffLoading(true);
+  
+  try {
+    // Get current assignments first
+    const currentAssignments = await fetchCurrentAssignments(bus.id);
+    
+    // Then fetch available staff including current assignments
+    await fetchAvailableStaff(bus.id);
+
+    // Set current assignments if they exist
+    if (currentAssignments?.currentAssignments) {
+      setStaffAssignment({
+        driverId: currentAssignments.currentAssignments.driver_id?.toString() || '',
+        conductorId: currentAssignments.currentAssignments.conductor_id?.toString() || '',
+        cleanerId: currentAssignments.currentAssignments.cleaner_id?.toString() || ''
+      });
+    }
+  } catch (error) {
+    console.error('Error in openAssignStaffDialog:', error);
+    setAssignmentError('Failed to load assignments');
+  } finally {
+    setStaffLoading(false);
+  }
+};
+
+
+  const availableDrivers = availableStaff.filter(s => s.role_name === 'Driver')
+  const availableConductors = availableStaff.filter(s => s.role_name === 'Conductor')
+  const availableCleaners = availableStaff.filter(s => s.role_name === 'Cleaner')
   const handleAssignStaff = async () => {
-    try {
-      setAssignmentError('')
-      const response = await fetch('/api/assign-staff', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          busId: selectedBus?.id,
-          driverName: staffAssignment.driverName,
-          conductorName: staffAssignment.conductorName,
-          cleanerName: staffAssignment.cleanerName
-        }),
-      })
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error)
-      }
-      await response.json()
-      setBuses(buses.map(bus => 
-        bus.id === selectedBus?.id ? { ...bus, staff_assigned: true } : bus
-      ))
-      setIsAssignStaffDialogOpen(false)
-      toast({
-        title: "Success",
-        description: "Staff assigned successfully",
-      })
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error('Error assigning staff:', error.message)
-        setAssignmentError(error.message)
-      } else {
-        console.error('Unexpected error:', error)
-        setAssignmentError('An unexpected error occurred. Please try again.')
-      }
+  try {
+    setAssignmentError('')
+    const response = await fetch('/api/assign-staff', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        busId: selectedBus?.id,
+        driverId: parseInt(staffAssignment.driverId),
+        conductorId: parseInt(staffAssignment.conductorId),
+        cleanerId: staffAssignment.cleanerId ? parseInt(staffAssignment.cleanerId) : null
+      }),
+    })
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error)
+    }
+    await response.json()
+    setBuses(buses.map(bus => 
+      bus.id === selectedBus?.id ? { ...bus, staff_assigned: true } : bus
+    ))
+    setIsAssignStaffDialogOpen(false)
+    toast({
+      title: "Success",
+      description: "Staff assigned successfully",
+    })
+  } catch (error) {
+    if (error instanceof Error) {
+      setAssignmentError(error.message)
+    } else {
+      setAssignmentError('An unexpected error occurred')
     }
   }
+}
 
   const filteredBuses = buses.filter(bus =>
     bus.bus_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -403,7 +469,7 @@ export default function BusesPage() {
                   <Button variant="outline" size="sm" onClick={() => handleDeleteBus(bus.id)}>
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
-                  <Button
+                  {/* <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
@@ -412,7 +478,14 @@ export default function BusesPage() {
                     }}
                   >
                     {bus.staff_assigned ? "Reassign Staff" : "Assign Staff"}
-                  </Button>
+                  </Button> */}
+                  <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openAssignStaffDialog(bus)}
+                    >
+                      {bus.staff_assigned ? "Reassign Staff" : "Assign Staff"}
+                    </Button>
                 </div>
               </TableCell>
             </TableRow>
@@ -487,36 +560,77 @@ export default function BusesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       <Dialog open={isAssignStaffDialogOpen} onOpenChange={setIsAssignStaffDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{selectedBus?.staff_assigned ? 'Reassign' : 'Assign'} Staff to Bus {selectedBus?.bus_number}</DialogTitle>
+            <DialogTitle>
+              {selectedBus?.staff_assigned ? 'Reassign' : 'Assign'} Staff to Bus {selectedBus?.bus_number}
+            </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div>
-              <Label htmlFor="driverName">Driver Name</Label>
-              <Input
-                id="driverName"
-                value={staffAssignment.driverName}
-                onChange={(e) => setStaffAssignment({ ...staffAssignment, driverName: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="conductorName">Conductor Name</Label>
-              <Input
-                id="conductorName"
-                value={staffAssignment.conductorName}
-                onChange={(e) => setStaffAssignment({ ...staffAssignment, conductorName: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="cleanerName">Cleaner Name (Optional)</Label>
-              <Input
-                id="cleanerName"
-                value={staffAssignment.cleanerName}
-                onChange={(e) => setStaffAssignment({ ...staffAssignment, cleanerName: e.target.value })}
-              />
-            </div>
+            {staffLoading ? (
+              <div>Loading staff...</div>
+            ) : (
+              <>
+                <div>
+                  <Label htmlFor="driverId">Driver</Label>
+                  <Select
+                    value={staffAssignment.driverId}
+                    onValueChange={(value) => setStaffAssignment({ ...staffAssignment, driverId: value })}
+                  >
+                    <SelectTrigger id="driverId">
+                      <SelectValue placeholder="Select a driver" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableDrivers.map((driver) => (
+                        <SelectItem key={driver.id} value={driver.id.toString()}>
+                          {driver.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="conductorId">Conductor</Label>
+                  <Select
+                    value={staffAssignment.conductorId}
+                    onValueChange={(value) => setStaffAssignment({ ...staffAssignment, conductorId: value })}
+                  >
+                    <SelectTrigger id="conductorId">
+                      <SelectValue placeholder="Select a conductor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableConductors.map((conductor) => (
+                        <SelectItem key={conductor.id} value={conductor.id.toString()}>
+                          {conductor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="cleanerId">Cleaner (Optional)</Label>
+                  <Select
+                    value={staffAssignment.cleanerId}
+                    onValueChange={(value) => setStaffAssignment({ ...staffAssignment, cleanerId: value })}
+                  >
+                    <SelectTrigger id="cleanerId">
+                      <SelectValue placeholder="Select a cleaner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCleaners.map((cleaner) => (
+                        <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                          {cleaner.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
           {assignmentError && (
             <Alert variant="destructive">
@@ -526,10 +640,12 @@ export default function BusesPage() {
             </Alert>
           )}
           <DialogFooter>
-            <Button onClick={handleAssignStaff}>Assign Staff</Button>
+            <Button onClick={handleAssignStaff} disabled={staffLoading}>Assign Staff</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+
     </div>
   )
 }

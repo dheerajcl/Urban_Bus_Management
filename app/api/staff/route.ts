@@ -64,11 +64,32 @@ export async function PUT(request: NextRequest) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+
+      // Get current role before update
+      const currentRoleResult = await client.query(
+        'SELECT role_id FROM staff_roles WHERE staff_id = $1',
+        [staff.id]
+      );
+      const currentRoleId = currentRoleResult.rows[0]?.role_id;
+
+      // If role is changing, delete from bus_staff_assignments
+      if (staff.role_id && staff.role_id !== currentRoleId) {
+        await client.query(`
+          DELETE FROM bus_staff_assignments 
+          WHERE driver_id = $1 
+          OR conductor_id = $1 
+          OR cleaner_id = $1
+        `, [staff.id]);
+      }
+
+      // Update staff details
       const result = await client.query(
         'UPDATE staff SET name = $1, contact_number = $2, license_number = $3, employment_date = $4 WHERE id = $5 RETURNING *',
         [staff.name, staff.contact_number, staff.license_number, staff.employment_date, staff.id]
       );
       const updatedStaff = result.rows[0];
+
+      // Update role if provided
       if (staff.role_id) {
         await client.query(
           'DELETE FROM staff_roles WHERE staff_id = $1',
@@ -79,6 +100,7 @@ export async function PUT(request: NextRequest) {
           [updatedStaff.id, staff.role_id]
         );
       }
+
       await client.query('COMMIT');
       return NextResponse.json(updatedStaff);
     } catch (error) {
@@ -94,15 +116,34 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
+    
     const { id } = await request.json();
-    const result = await query('DELETE FROM staff WHERE id = $1', [id]);
+    
+    await client.query(`
+      DELETE FROM bus_staff_assignments 
+      WHERE driver_id = $1 OR conductor_id = $1 OR cleaner_id = $1
+    `, [id]);
+    
+    await client.query('DELETE FROM staff_roles WHERE staff_id = $1', [id]);
+    
+    const result = await client.query('DELETE FROM staff WHERE id = $1', [id]);
+    
     if (result.rowCount === 0) {
+      await client.query('ROLLBACK');
       return NextResponse.json({ error: 'Staff not found' }, { status: 404 });
     }
+    
+    await client.query('COMMIT');
     return NextResponse.json({ success: true });
+    
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error deleting staff:', error);
     return NextResponse.json({ error: 'Failed to delete staff' }, { status: 500 });
+  } finally {
+    client.release();
   }
 }
