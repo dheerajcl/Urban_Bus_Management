@@ -733,7 +733,7 @@ export default function RoutesPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Distances between stops</h3>
               <div className="grid gap-4 max-h-[200px] overflow-y-auto pr-2">
-                {busAssignment.distances.map((distance, index) => (
+                {/* {busAssignment.distances.map((distance, index) => (
                   <div key={index} className="grid grid-cols-3 gap-2 items-center">
                     <Input
                       value={distance.from_stop}
@@ -760,6 +760,54 @@ export default function RoutesPage() {
                         const newDistances = [...busAssignment.distances];
                         newDistances[index].distance_km = parseFloat(e.target.value);
                         setBusAssignment({ ...busAssignment, distances: newDistances });
+                      }}
+                      placeholder="Distance (km)"
+                    />
+                  </div>
+                ))} */}
+
+                {busAssignment.distances.map((distance, index) => (
+                  <div key={index} className="grid grid-cols-3 gap-2 items-center">
+                    <Input
+                      value={distance.from_stop}
+                      onChange={(e) => {
+                        const newDistances = [...busAssignment.distances];
+                        newDistances[index].from_stop = e.target.value;
+                        setBusAssignment({ ...busAssignment, distances: newDistances });
+                      }}
+                      placeholder="From Stop"
+                    />
+                    <Input
+                      value={distance.to_stop}
+                      onChange={(e) => {
+                        const newDistances = [...busAssignment.distances];
+                        newDistances[index].to_stop = e.target.value;
+                        setBusAssignment({ ...busAssignment, distances: newDistances });
+                      }}
+                      placeholder="To Stop"
+                    />
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={distance.distance_km}
+                      onChange={(e) => {
+                        const newValue = Math.max(0, parseFloat(e.target.value) || 0);
+                        const newDistances = [...busAssignment.distances];
+                        newDistances[index].distance_km = newValue;
+                        setBusAssignment({ ...busAssignment, distances: newDistances });
+                      }}
+                      onBlur={(e) => {
+                        if (parseFloat(e.target.value) < 0) {
+                          const newDistances = [...busAssignment.distances];
+                          newDistances[index].distance_km = 0;
+                          setBusAssignment({ ...busAssignment, distances: newDistances });
+                          toast({
+                            title: "Invalid Distance",
+                            description: "Distance cannot be negative. Value set to 0.",
+                            variant: "destructive",
+                          });
+                        }
                       }}
                       placeholder="Distance (km)"
                     />

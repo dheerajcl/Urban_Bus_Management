@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Suspense } from "react"
 import Link from "next/link"
 import { AlertTriangle, ArrowUpRight, Bus, DollarSign, Fuel, BarChart3, Users, Phone } from 'lucide-react'
