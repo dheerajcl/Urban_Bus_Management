@@ -3,7 +3,7 @@ import { query } from '@/lib/db'
 
 export async function PUT(request: NextRequest) {
   try {
-    const { route_id, bus_id, departure, arrival, price, available_seats, distances } = await request.json()
+    const { route_id, bus_id, departure, arrival, available_seats, distances } = await request.json()
 
     // Check if the bus exists and get its details
     const busResult = await query('SELECT id, capacity, bus_number FROM buses WHERE id = $1', [bus_id])
@@ -19,9 +19,9 @@ export async function PUT(request: NextRequest) {
       // Update the schedules table
       await query(`
         UPDATE schedules
-        SET bus_id = $1, departure = $2, arrival = $3, price = $4, available_seats = $5
-        WHERE route_id = $6
-      `, [bus_id, departure, arrival, price, available_seats, route_id])
+        SET bus_id = $1, departure = $2, arrival = $3, available_seats = $4
+        WHERE route_id = $5
+      `, [bus_id, departure, arrival, available_seats, route_id])
 
       // Delete existing distances
       await query('DELETE FROM distances WHERE route_id = $1', [route_id])

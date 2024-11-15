@@ -66,12 +66,15 @@ type Bus = {
 }
 
 type BusAssignment = {
-  bus_id: number
-  departure: string | null
-  arrival: string | null
-  price: number
-  available_seats: number
-  distances: { from_stop: string; to_stop: string; distance_km: number }[]
+  bus_id: number;
+  departure: string | null;
+  arrival: string | null;
+  available_seats: number;
+  distances: Array<{
+    from_stop: string;
+    to_stop: string;
+    distance_km: number;
+  }>;
 }
 
 export default function RoutesPage() {
@@ -96,7 +99,6 @@ export default function RoutesPage() {
     bus_id: 0,
     departure: null,
     arrival: null,
-    price: 0,
     available_seats: 0,
     distances: []
   })
@@ -126,9 +128,9 @@ export default function RoutesPage() {
     loadRoutes()
   }, [loadRoutes])
 
-  const fetchAvailableBuses = async () => {
+  const fetchAvailableBuses = async (currentBusId?: number) => {
     try {
-      const response = await fetch('/api/available-buses')
+      const response = await fetch(`/api/available-buses${currentBusId ? `?currentBusId=${currentBusId}` : ''}`)
       if (!response.ok) {
         throw new Error('Failed to fetch available buses')
       }
@@ -152,10 +154,14 @@ export default function RoutesPage() {
       }
       const data = await response.json()
       setBusAssignment({
-        ...data,
+        bus_id: data.bus_id,
         departure: data.departure,
         arrival: data.arrival,
+        available_seats: data.available_seats,
+        distances: data.distances
       })
+      // Fetch available buses including the currently assigned bus
+      await fetchAvailableBuses(data.bus_id)
     } catch (error) {
       console.error('Error fetching current assignment:', error)
       toast({
@@ -297,6 +303,27 @@ export default function RoutesPage() {
     }
   }
 
+  const openAssignBusDialog = async (route: Route) => {
+    setAssigningRoute(route)
+    if (route.schedule_info?.is_assigned) {
+      await fetchCurrentAssignment(route.id)
+    } else {
+      setBusAssignment({
+        bus_id: 0,
+        departure: null,
+        arrival: null,
+        available_seats: 0,
+        distances: route.stops.slice(0, -1).map((stop, index) => ({
+          from_stop: stop.stop_name,
+          to_stop: route.stops[index + 1].stop_name,
+          distance_km: 0
+        }))
+      })
+      await fetchAvailableBuses()
+    }
+    setIsAssignBusDialogOpen(true)
+  }
+
   const handleDeassignBus = async (routeId: number) => {
     try {
       const response = await fetch(`/api/deassign-bus/${routeId}`, {
@@ -322,28 +349,6 @@ export default function RoutesPage() {
         variant: "destructive",
       })
     }
-  }
-
-  const openAssignBusDialog = (route: Route) => {
-    setAssigningRoute(route)
-    fetchAvailableBuses()
-    if (route.schedule_info?.is_assigned) {
-      fetchCurrentAssignment(route.id)
-    } else {
-      setBusAssignment({
-        bus_id: 0,
-        departure: null,
-        arrival: null,
-        price: 0,
-        available_seats: 0,
-        distances: route.stops.slice(0, -1).map((stop, index) => ({
-          from_stop: stop.stop_name,
-          to_stop: route.stops[index + 1].stop_name,
-          distance_km: 0
-        }))
-      })
-    }
-    setIsAssignBusDialogOpen(true)
   }
 
   const handleDateTimeChange = (field: 'departure' | 'arrival', value: string) => {
@@ -688,7 +693,7 @@ export default function RoutesPage() {
                   <SelectContent>
                     {availableBuses.map((bus) => (
                       <SelectItem key={bus.id} value={bus.id.toString()}>
-                        {bus.bus_number}
+                        {bus.bus_number} {bus.id === busAssignment.bus_id ? '(Currently Assigned)' : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -708,17 +713,6 @@ export default function RoutesPage() {
                   type="datetime-local"
                   value={busAssignment.arrival || ''}
                   onChange={(e) => handleDateTimeChange('arrival', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="price">Price</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  value={busAssignment.price}
-                  onChange={(e) => setBusAssignment({ ...busAssignment, price: parseFloat(e.target.value) })}
-                  required
-                  className="w-full"
                 />
               </div>
               <div className="space-y-2">

@@ -6,13 +6,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const routeId = params.id
 
     const result = await query(`
-      SELECT s.bus_id, s.departure, s.arrival, s.price, s.available_seats, b.bus_number,
+      SELECT s.bus_id, s.departure, s.arrival, s.available_seats, b.bus_number,
              json_agg(json_build_object('from_stop', d.from_stop, 'to_stop', d.to_stop, 'distance_km', d.distance_km)) as distances
       FROM schedules s
       JOIN buses b ON s.bus_id = b.id
       LEFT JOIN distances d ON s.route_id = d.route_id
       WHERE s.route_id = $1
-      GROUP BY s.bus_id, s.departure, s.arrival, s.price, s.available_seats, b.bus_number
+      GROUP BY s.bus_id, s.departure, s.arrival, s.available_seats, b.bus_number
     `, [routeId])
 
     if (result.rows.length === 0) {
