@@ -182,13 +182,7 @@ export default function LandingPage() {
     setIsBookingModalOpen(false)
   }
 
-    const handleBook = async (busId: number, routeId: number, source: string, destination: string, arrival: string, seats: number, email: string, name: string): Promise<void> => {
-    // const [apiCallCounter, setApiCallCounter] = useState(0); // Counter variable
-
-    // if (apiCallCounter >= 1) {
-    //   console.log('API call prevented, counter:', apiCallCounter);
-    //   return; // Prevent multiple API calls
-    // }
+  const handleBook = async (busId: number, routeId: number, source: string, destination: string, arrival: string, seats: number, email: string, name: string): Promise<void> => {
     try {
       const pricePerSeat = parseFloat(busResults.find(bus => bus.id === busId)?.price || '0');
       const bookingData = {
@@ -209,11 +203,13 @@ export default function LandingPage() {
         },
         body: JSON.stringify(bookingData),
       });
-      if (!response.ok) {
-        throw new Error('Failed to book seats');
-      }
-      // setApiCallCounter(apiCallCounter + 1); // Increment counter
+  
       const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to book seats');
+      }
+  
       console.log('handleBook - Response from API:', data);
       handleCloseBookingModal();
       const totalPrice = typeof data.totalPrice === 'number' ? data.totalPrice : 0;
@@ -222,19 +218,23 @@ export default function LandingPage() {
         description: `Total price: ₹${totalPrice.toFixed(2)}`,
         className: "bg-green-700 text-white p-2 text-sm",
       });
-      await handleSearch();
+      
+      // Update the local state with the expected number of available seats from the server
+      setBusResults(prevResults => 
+        prevResults.map(bus => 
+          bus.id === busId 
+            ? { ...bus, available_seats: data.updatedAvailableSeats } 
+            : bus
+        )
+      );
     } catch (error) {
       console.error('Booking error:', error);
       toast({
         title: 'Booking Failed',
-        description: 'An error occurred while booking. Please try again.',
+        description: error instanceof Error ? error.message : 'An error occurred while booking. Please try again.',
         variant: "destructive",
       });
     }
-    // finally {
-    //   setApiCallCounter(0); // Reset the counter after the API call
-    //   console.log('API call completed, counter reset to:', 0);
-    // }
   };
 
 
