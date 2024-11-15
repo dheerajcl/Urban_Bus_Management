@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
@@ -78,7 +78,6 @@ export async function GET(request: Request) {
     console.log('Distance Query Parameters:', [routeId, source, destination, sourceOrder, destinationOrder]);
     console.log('Distance Result:', distanceResult.rows);
 
-    // Get the distance value
     const distance_km =
       distanceResult.rows.length > 0
         ? parseFloat(distanceResult.rows[0].total_distance)
