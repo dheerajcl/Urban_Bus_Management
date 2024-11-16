@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const pathname = usePathname()
+  // const pathname = usePathname()
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
