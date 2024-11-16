@@ -38,13 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoggedIn(true)
     } else {
       setIsLoggedIn(false)
-      if (pathname !== '/' && pathname !== '/user/login' && pathname !== '/admin/login' && pathname !== '/register') {
-        router.push('/user/login')
-      }
+      // if (pathname !== '/' && pathname !== '/user/login' && pathname !== '/admin/login' && pathname !== '/register') {
+      //   router.push('/user/login')
+      // }
     }
 
     setLoading(false)
-  }, [pathname, router])
+  }, [])
 
   const login = async (username: string, password: string, isAdmin: boolean) => {
     try {
@@ -86,7 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         return true
       } else {
-        return false
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Registration failed')
       }
     } catch (error) {
       console.error('Registration error:', error)
