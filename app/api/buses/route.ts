@@ -43,7 +43,20 @@ export async function POST(request: NextRequest) {
       'INSERT INTO buses (operator_id, bus_number, type, capacity, last_maintenance, next_maintenance) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       [bus.operator_id, bus.bus_number, bus.type, bus.capacity, bus.last_maintenance, bus.next_maintenance]
     );
-    return NextResponse.json(result.rows[0]);
+    
+    // Insert fare information
+    const fareResult = await query(
+      'INSERT INTO fare (bus_id, base_fare, per_km_rate, per_stop_rate) VALUES ($1, $2, $3, $4) RETURNING *',
+      [result.rows[0].id, bus.base_fare, bus.per_km_rate, bus.per_stop_rate]
+    );
+
+    // Combine bus and fare information in the response
+    const response = {
+      ...result.rows[0],
+      fare: fareResult.rows[0]
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error adding bus:', error);
     return NextResponse.json({ error: 'Failed to add bus' }, { status: 500 });

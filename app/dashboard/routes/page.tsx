@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Pencil, Trash2, Search, Bus, RefreshCw, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, Bus, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -17,7 +17,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -37,44 +36,48 @@ import {
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 
-export type ScheduleInfo = {
-  is_assigned: boolean
-  bus_number: string | null
-  departure: string | null
-  arrival: string | null
-}
-
-export type Stop = {
+type Stop = {
   id?: number
   stop_name: string
   stop_order: number
 }
 
-export type Route = {
+type Distance = {
+  from_stop: string
+  to_stop: string
+  distance_km: number
+}
+
+type ScheduleInfo = {
+  is_assigned: boolean
+  bus_id?: number
+  bus_number?: string
+  departure?: string
+  arrival?: string
+}
+
+type Route = {
   id: number
   name: string
   source: string
   destination: string
   operator_id: number
   stops: Stop[]
-  schedule_info: ScheduleInfo | null
+  distances: Distance[]
+  schedule_info?: ScheduleInfo
 }
 
 type Bus = {
   id: number
   bus_number: string
+  capacity: number
 }
 
 type BusAssignment = {
-  bus_id: number;
-  departure: string | null;
-  arrival: string | null;
-  available_seats: number;
-  distances: Array<{
-    from_stop: string;
-    to_stop: string;
-    distance_km: number;
-  }>;
+  bus_id: number
+  departure: string | null
+  arrival: string | null
+  available_seats: number
 }
 
 export default function RoutesPage() {
@@ -90,7 +93,8 @@ export default function RoutesPage() {
     source: '',
     destination: '',
     operator_id: 1,
-    stops: []
+    stops: [],
+    distances: []
   })
   const [editingRoute, setEditingRoute] = useState<Route | null>(null)
   const [assigningRoute, setAssigningRoute] = useState<Route | null>(null)
@@ -99,13 +103,13 @@ export default function RoutesPage() {
     bus_id: 0,
     departure: null,
     arrival: null,
-    available_seats: 0,
-    distances: []
+    available_seats: 0
   })
+  const [stopForm, setStopForm] = useState({ from: '', to: '', distance: '' })
 
   const loadRoutes = useCallback(async () => {
+    setLoading(true)
     try {
-      setLoading(true)
       const response = await fetch('/api/routes')
       if (!response.ok) {
         throw new Error('Failed to fetch routes')
@@ -113,10 +117,10 @@ export default function RoutesPage() {
       const data = await response.json()
       setRoutes(data)
     } catch (error) {
-      console.error('Error fetching routes:', error)
+      console.error('Error loading routes:', error)
       toast({
         title: "Error",
-        description: "Failed to fetch routes. Please try again later.",
+        description: "Failed to load routes. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -128,88 +132,77 @@ export default function RoutesPage() {
     loadRoutes()
   }, [loadRoutes])
 
-  const fetchAvailableBuses = async (currentBusId?: number) => {
-    try {
-      const response = await fetch(`/api/available-buses${currentBusId ? `?currentBusId=${currentBusId}` : ''}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch available buses')
-      }
-      const data = await response.json()
-      setAvailableBuses(data)
-    } catch (error) {
-      console.error('Error fetching available buses:', error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch available buses. Please try again later.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const fetchCurrentAssignment = async (routeId: number) => {
-    try {
-      const response = await fetch(`/api/bus-assignment/${routeId}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch current assignment')
-      }
-      const data = await response.json()
-      setBusAssignment({
-        bus_id: data.bus_id,
-        departure: data.departure,
-        arrival: data.arrival,
-        available_seats: data.available_seats,
-        distances: data.distances
-      })
-      // Fetch available buses including the currently assigned bus
-      await fetchAvailableBuses(data.bus_id)
-    } catch (error) {
-      console.error('Error fetching current assignment:', error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch current assignment. Please try again later.",
-        variant: "destructive",
-      })
-    }
-  }
-
   const handleAddRoute = async () => {
     try {
+      // Add source as the first stop
+      const updatedStops = [
+        { stop_name: newRoute.source, stop_order: 1 },
+        ...newRoute.stops.map((stop, index) => ({ ...stop, stop_order: index + 2 }))
+      ]
+      
+      const routeToAdd = {
+        ...newRoute,
+        stops: updatedStops,
+      }
+
       const response = await fetch('/api/routes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newRoute),
-      });
+        body: JSON.stringify(routeToAdd),
+      })
       if (!response.ok) {
-        throw new Error('Failed to add route');
+        throw new Error('Failed to add route')
       }
-      const addedRoute = await response.json();
-      setRoutes([...routes, addedRoute]);
-      setIsAddDialogOpen(false);
+      const addedRoute = await response.json()
+      setRoutes([...routes, addedRoute])
+      setIsAddDialogOpen(false)
       setNewRoute({
         name: '',
         source: '',
         destination: '',
         operator_id: 1,
         stops: [],
-      });
+        distances: [],
+      })
+      setStopForm({ from: '', to: '', distance: '' })
       toast({
         title: "Success",
         description: "Route added successfully",
-      });
+      })
     } catch (error) {
-      console.error('Error adding route:', error);
+      console.error('Error adding route:', error)
       toast({
         title: "Error",
         description: "Failed to add route. Please try again.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
+
+  const handleAddStop = () => {
+    if (!stopForm.from || !stopForm.to || !stopForm.distance) {
+      toast({
+        title: "Error",
+        description: "Please fill in all stop details",
+        variant: "destructive",
+      })
+      return
+    }
+    const newStop = { stop_name: stopForm.to, stop_order: newRoute.stops.length + 2 } // +2 because source is the first stop
+    const newDistance = { from_stop: stopForm.from, to_stop: stopForm.to, distance_km: parseFloat(stopForm.distance) }
+    setNewRoute(prevRoute => ({
+      ...prevRoute,
+      stops: [...prevRoute.stops, newStop],
+      distances: [...prevRoute.distances, newDistance]
+    }))
+    setStopForm({ from: stopForm.to, to: '', distance: '' })
+  }
+
 
   const handleEditRoute = async () => {
-    if (!editingRoute) return;
+    if (!editingRoute) return
     try {
       const response = await fetch('/api/routes', {
         method: 'PUT',
@@ -217,50 +210,50 @@ export default function RoutesPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(editingRoute),
-      });
+      })
       if (!response.ok) {
-        throw new Error('Failed to update route');
+        throw new Error('Failed to update route')
       }
-      const updatedRoute = await response.json();
-      setRoutes(routes.map(route => route.id === updatedRoute.id ? updatedRoute : route));
-      setIsEditDialogOpen(false);
-      setEditingRoute(null);
+      const updatedRoute = await response.json()
+      setRoutes(routes.map(route => route.id === updatedRoute.id ? updatedRoute : route))
+      setIsEditDialogOpen(false)
+      setEditingRoute(null)
       toast({
         title: "Success",
         description: "Route updated successfully",
-      });
+      })
     } catch (error) {
-      console.error('Error updating route:', error);
+      console.error('Error updating route:', error)
       toast({
         title: "Error",
         description: "Failed to update route. Please try again.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
   const handleDeleteRoute = async (id: number) => {
     try {
       const response = await fetch(`/api/routes?id=${id}`, {
         method: 'DELETE',
-      });
+      })
       if (!response.ok) {
-        throw new Error('Failed to delete route');
+        throw new Error('Failed to delete route')
       }
-      setRoutes(routes.filter(route => route.id !== id));
+      setRoutes(routes.filter(route => route.id !== id))
       toast({
         title: "Success",
         description: "Route deleted successfully",
-      });
+      })
     } catch (error) {
-      console.error('Error deleting route:', error);
+      console.error('Error deleting route:', error)
       toast({
         title: "Error",
         description: "Failed to delete route. Please try again.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
   const handleAssignBus = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -303,6 +296,33 @@ export default function RoutesPage() {
     }
   }
 
+  const handleDeassignBus = async (routeId: number) => {
+    try {
+      const response = await fetch(`/api/deassign-bus?routeId=${routeId}`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to deassign bus')
+      }
+
+      toast({
+        title: "Success",
+        description: "Bus deassigned successfully",
+      })
+
+      loadRoutes()
+    } catch (error) {
+      console.error('Error deassigning bus:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to deassign bus. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const openAssignBusDialog = async (route: Route) => {
     setAssigningRoute(route)
     if (route.schedule_info?.is_assigned) {
@@ -312,192 +332,96 @@ export default function RoutesPage() {
         bus_id: 0,
         departure: null,
         arrival: null,
-        available_seats: 0,
-        distances: route.stops.slice(0, -1).map((stop, index) => ({
-          from_stop: stop.stop_name,
-          to_stop: route.stops[index + 1].stop_name,
-          distance_km: 0
-        }))
+        available_seats: 0
       })
-      await fetchAvailableBuses()
     }
+    await fetchAvailableBuses(route.id)
     setIsAssignBusDialogOpen(true)
   }
 
-  const handleDeassignBus = async (routeId: number) => {
+  const fetchAvailableBuses = async (routeId: number) => {
     try {
-      const response = await fetch(`/api/deassign-bus/${routeId}`, {
-        method: 'DELETE',
-      })
-  
+      const response = await fetch(`/api/available-buses?routeId=${routeId}`)
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to de-assign bus')
+        throw new Error('Failed to fetch available buses')
       }
-  
-      toast({
-        title: "Success",
-        description: "Bus de-assigned successfully",
-      })
-  
-      loadRoutes()
+      const buses = await response.json()
+      setAvailableBuses(buses)
     } catch (error) {
-      console.error('Error de-assigning bus:', error)
+      console.error('Error fetching available buses:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to de-assign bus. Please try again.",
+        description: "Failed to fetch available buses. Please try again.",
         variant: "destructive",
       })
     }
   }
 
-  const handleDateTimeChange = (field: 'departure' | 'arrival', value: string) => {
-    setBusAssignment(prev => ({
-      ...prev,
-      [field]: value
-    }))
+  const fetchCurrentAssignment = async (routeId: number) => {
+    try {
+      const response = await fetch(`/api/current-assignment?routeId=${routeId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch current assignment')
+      }
+      const currentAssignment = await response.json()
+      setBusAssignment(currentAssignment)
+    } catch (error) {
+      console.error('Error fetching current assignment:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch current assignment. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const filteredRoutes = routes.filter(route =>
     route.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     route.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
     route.destination.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  )
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Route Management</h1>
-      <div className="flex justify-between items-center mb-6">
-        <div className="relative w-64">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-2">
+          <Search className="w-5 h-5 text-gray-500" />
           <Input
             type="text"
             placeholder="Search routes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="w-64"
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add New Route
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Route</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">Name</Label>
-                <Input
-                  id="name"
-                  value={newRoute.name}
-                  onChange={(e) => setNewRoute({ ...newRoute, name: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="source" className="text-right">Source</Label>
-                <Input
-                  id="source"
-                  value={newRoute.source}
-                  onChange={(e) => setNewRoute({ ...newRoute, source: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="destination" className="text-right">Destination</Label>
-                <Input
-                  id="destination"
-                  value={newRoute.destination}
-                  onChange={(e) => setNewRoute({ ...newRoute, destination: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="stops" className="text-right">Stops</Label>
-                <div className="col-span-3 space-y-2">
-                  {newRoute.stops.map((stop, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <Input
-                        value={stop.stop_name}
-                        onChange={(e) => {
-                          const updatedStops = [...newRoute.stops];
-                          updatedStops[index].stop_name = e.target.value;
-                          setNewRoute({ ...newRoute, stops: updatedStops });
-                        }}
-                        placeholder="Stop name"
-                      />
-                      <Input
-                        type="number"
-                        value={stop.stop_order}
-                        onChange={(e) => {
-                          const updatedStops = [...newRoute.stops];
-                          updatedStops[index].stop_order = parseInt(e.target.value);
-                          setNewRoute({ ...newRoute, stops: updatedStops });
-                        }}
-                        placeholder="Order"
-                        className="w-20"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const updatedStops = newRoute.stops.filter((_, i) => i !== index);
-                          setNewRoute({ ...newRoute, stops: updatedStops });
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    onClick={() => setNewRoute({
-                      ...newRoute,
-                      stops: [...newRoute.stops, { stop_name: '', stop_order: newRoute.stops.length + 1 }]
-                    })}
-                  >
-                    Add Stop
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" onClick={handleAddRoute}>Add Route</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="w-5 h-5 mr-2" /> Add New Route
+        </Button>
       </div>
+      
+      {/* Routes Table */}
       <div className="border rounded-md">
         <div className="max-h-[calc(100vh-250px)] overflow-y-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky top-0 bg-background">Name</TableHead>
-                <TableHead className="sticky top-0 bg-background">Source</TableHead>
-                <TableHead className="sticky top-0 bg-background">Destination</TableHead>
-                <TableHead className="sticky top-0 bg-background">Stops</TableHead>
-                <TableHead className="sticky top-0 bg-background">Actions</TableHead>
-                <TableHead className="sticky top-0 bg-background">Bus Status</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead>Destination</TableHead>
+                <TableHead>Actions</TableHead>
+                <TableHead>Bus Assignment</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                [...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Skeleton className="h-8 w-8" />
-                        <Skeleton className="h-8 w-8" />
-                      </div>
-                    </TableCell>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton className="h-4 w-[250px]" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[150px]" /></TableCell>
                   </TableRow>
                 ))
               ) : (
@@ -506,17 +430,16 @@ export default function RoutesPage() {
                     <TableCell>{route.name}</TableCell>
                     <TableCell>{route.source}</TableCell>
                     <TableCell>{route.destination}</TableCell>
-                    <TableCell>{route.stops.length}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button variant="outline" size="sm" onClick={() => {
                           setEditingRoute(route)
                           setIsEditDialogOpen(true)
                         }}>
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="w-4 h-4 mr-2" /> Edit
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handleDeleteRoute(route.id)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
+                          <Trash2 className="w-4 h-4 mr-2" /> Delete
                         </Button>
                       </div>
                     </TableCell>
@@ -543,16 +466,10 @@ export default function RoutesPage() {
                                     ? format(new Date(route.schedule_info.arrival), "PPP 'at' p")
                                     : 'N/A'}
                                 </p>
+                                <Button variant="outline" size="sm" onClick={() => handleDeassignBus(route.id)}>
+                                  Deassign Bus
+                                </Button>
                               </div>
-                              <Button 
-                                variant="destructive" 
-                                size="sm" 
-                                className="mt-2 w-full"
-                                onClick={() => handleDeassignBus(route.id)}
-                              >
-                                <X className="h-4 w-4 mr-2" />
-                                De-assign Bus
-                              </Button>
                             </HoverCardContent>
                           </HoverCard>
                           <Button variant="outline" size="sm" onClick={() => openAssignBusDialog(route)}>
@@ -575,6 +492,85 @@ export default function RoutesPage() {
         </div>
       </div>
       
+      {/* Add Route Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Route</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">Name</Label>
+              <Input
+                id="name"
+                value={newRoute.name}
+                onChange={(e) => setNewRoute({ ...newRoute, name: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="source" className="text-right">Source</Label>
+              <Input
+                id="source"
+                value={newRoute.source}
+                onChange={(e) => setNewRoute({ ...newRoute, source: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="destination" className="text-right">Destination</Label>
+              <Input
+                id="destination"
+                value={newRoute.destination}
+                onChange={(e) => setNewRoute({ ...newRoute, destination: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="from" className="text-right">From</Label>
+              <Input
+                id="from"
+                value={stopForm.from}
+                onChange={(e) => setStopForm({ ...stopForm, from: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="to" className="text-right">To</Label>
+              <Input
+                id="to"
+                value={stopForm.to}
+                onChange={(e) => setStopForm({ ...stopForm, to: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="distance" className="text-right">Distance (km)</Label>
+              <Input
+                id="distance"
+                type="number"
+                value={stopForm.distance}
+                onChange={(e) => setStopForm({ ...stopForm, distance: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <Button onClick={handleAddStop}>Add Stop</Button>
+            <div>
+              <h4 className="font-semibold mb-2">Added Stops:</h4>
+              <ul className="list-disc pl-5">
+                {newRoute.stops.map((stop, index) => (
+                  <li key={index}>{stop.stop_name}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" onClick={handleAddRoute}>Finish</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Route Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -665,6 +661,74 @@ export default function RoutesPage() {
                 </Button>
               </div>
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-distances" className="text-right">Distances</Label>
+              <div className="col-span-3 space-y-2">
+                {editingRoute?.distances.map((distance, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <Input
+                      value={distance.from_stop}
+                      onChange={(e) => {
+                        if (editingRoute) {
+                          const updatedDistances = [...editingRoute.distances];
+                          updatedDistances[index].from_stop = e.target.value;
+                          setEditingRoute({ ...editingRoute, distances: updatedDistances });
+                        }
+                      }}
+                      placeholder="From stop"
+                    />
+                    <Input
+                      value={distance.to_stop}
+                      onChange={(e) => {
+                        if (editingRoute) {
+                          const updatedDistances = [...editingRoute.distances];
+                          updatedDistances[index].to_stop = e.target.value;
+                          setEditingRoute({ ...editingRoute, distances: updatedDistances });
+                        }
+                      }}
+                      placeholder="To stop"
+                    />
+                    <Input
+                      type="number"
+                      value={distance.distance_km}
+                      onChange={(e) => {
+                        if (editingRoute) {
+                          const updatedDistances = [...editingRoute.distances];
+                          updatedDistances[index].distance_km = parseFloat(e.target.value);
+                          setEditingRoute({ ...editingRoute, distances: updatedDistances });
+                        }
+                      }}
+                      placeholder="Distance (km)"
+                      className="w-24"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (editingRoute) {
+                          const updatedDistances = editingRoute.distances.filter((_, i) => i !== index);
+                          setEditingRoute({ ...editingRoute, distances: updatedDistances });
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  onClick={() => {
+                    if (editingRoute) {
+                      setEditingRoute({
+                        ...editingRoute,
+                        distances: [...editingRoute.distances, { from_stop: '', to_stop: '', distance_km: 0 }]
+                      });
+                    }
+                  }}
+                >
+                  Add Distance
+                </Button>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button type="submit" onClick={handleEditRoute}>Save Changes</Button>
@@ -672,6 +736,7 @@ export default function RoutesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Assign/Reassign Bus Dialog */}
       <Dialog open={isAssignBusDialogOpen} onOpenChange={setIsAssignBusDialogOpen}>
         <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
@@ -684,7 +749,7 @@ export default function RoutesPage() {
               <div className="space-y-2">
                 <Label htmlFor="bus_id">Bus</Label>
                 <Select
-                  value={busAssignment.bus_id.toString()}
+                  value={busAssignment.bus_id.toString() || ''}
                   onValueChange={(value) => setBusAssignment({ ...busAssignment, bus_id: parseInt(value) })}
                 >
                   <SelectTrigger id="bus_id" className="w-full">
@@ -693,7 +758,7 @@ export default function RoutesPage() {
                   <SelectContent>
                     {availableBuses.map((bus) => (
                       <SelectItem key={bus.id} value={bus.id.toString()}>
-                        {bus.bus_number} {bus.id === busAssignment.bus_id ? '(Currently Assigned)' : ''}
+                        {bus.bus_number} {bus.id === assigningRoute?.schedule_info?.bus_id ? '(Currently Assigned)' : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -704,7 +769,7 @@ export default function RoutesPage() {
                 <Input
                   type="datetime-local"
                   value={busAssignment.departure || ''}
-                  onChange={(e) => handleDateTimeChange('departure', e.target.value)}
+                  onChange={(e) => setBusAssignment({ ...busAssignment, departure: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -712,7 +777,7 @@ export default function RoutesPage() {
                 <Input
                   type="datetime-local"
                   value={busAssignment.arrival || ''}
-                  onChange={(e) => handleDateTimeChange('arrival', e.target.value)}
+                  onChange={(e) => setBusAssignment({ ...busAssignment, arrival: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -730,93 +795,8 @@ export default function RoutesPage() {
                 />
               </div>
             </div>
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Distances between stops</h3>
-              <div className="grid gap-4 max-h-[200px] overflow-y-auto pr-2">
-                {/* {busAssignment.distances.map((distance, index) => (
-                  <div key={index} className="grid grid-cols-3 gap-2 items-center">
-                    <Input
-                      value={distance.from_stop}
-                      onChange={(e) => {
-                        const newDistances = [...busAssignment.distances];
-                        newDistances[index].from_stop = e.target.value;
-                        setBusAssignment({ ...busAssignment, distances: newDistances });
-                      }}
-                      placeholder="From Stop"
-                    />
-                    <Input
-                      value={distance.to_stop}
-                      onChange={(e) => {
-                        const newDistances = [...busAssignment.distances];
-                        newDistances[index].to_stop = e.target.value;
-                        setBusAssignment({ ...busAssignment, distances: newDistances });
-                      }}
-                      placeholder="To Stop"
-                    />
-                    <Input
-                      type="number"
-                      value={distance.distance_km}
-                      onChange={(e) => {
-                        const newDistances = [...busAssignment.distances];
-                        newDistances[index].distance_km = parseFloat(e.target.value);
-                        setBusAssignment({ ...busAssignment, distances: newDistances });
-                      }}
-                      placeholder="Distance (km)"
-                    />
-                  </div>
-                ))} */}
-
-                {busAssignment.distances.map((distance, index) => (
-                  <div key={index} className="grid grid-cols-3 gap-2 items-center">
-                    <Input
-                      value={distance.from_stop}
-                      onChange={(e) => {
-                        const newDistances = [...busAssignment.distances];
-                        newDistances[index].from_stop = e.target.value;
-                        setBusAssignment({ ...busAssignment, distances: newDistances });
-                      }}
-                      placeholder="From Stop"
-                    />
-                    <Input
-                      value={distance.to_stop}
-                      onChange={(e) => {
-                        const newDistances = [...busAssignment.distances];
-                        newDistances[index].to_stop = e.target.value;
-                        setBusAssignment({ ...busAssignment, distances: newDistances });
-                      }}
-                      placeholder="To Stop"
-                    />
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={distance.distance_km}
-                      onChange={(e) => {
-                        const newValue = Math.max(0, parseFloat(e.target.value) || 0);
-                        const newDistances = [...busAssignment.distances];
-                        newDistances[index].distance_km = newValue;
-                        setBusAssignment({ ...busAssignment, distances: newDistances });
-                      }}
-                      onBlur={(e) => {
-                        if (parseFloat(e.target.value) < 0) {
-                          const newDistances = [...busAssignment.distances];
-                          newDistances[index].distance_km = 0;
-                          setBusAssignment({ ...busAssignment, distances: newDistances });
-                          toast({
-                            title: "Invalid Distance",
-                            description: "Distance cannot be negative. Value set to 0.",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                      placeholder="Distance (km)"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
             <DialogFooter>
-              <Button type="submit" className="w-full sm:w-auto">
+              <Button type="submit">
                 {assigningRoute?.schedule_info?.is_assigned ? 'Reassign' : 'Assign'} Bus
               </Button>
             </DialogFooter>

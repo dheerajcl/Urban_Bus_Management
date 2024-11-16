@@ -41,10 +41,11 @@ type Bus = {
   last_maintenance: string
   next_maintenance: string
   staff_assigned: boolean
+  base_fare: number
+  per_km_rate: number
+  per_stop_rate: number
 }
 
-
-//change 1
 type StaffMember = {
   id: number
   name: string
@@ -59,15 +60,17 @@ export default function BusesPage() {
   const [isAssignStaffDialogOpen, setIsAssignStaffDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  //new
-  const [staffLoading, setStaffLoading] = useState(false);
+  const [staffLoading, setStaffLoading] = useState(false)
   const [newBus, setNewBus] = useState<Omit<Bus, 'id' | 'staff_assigned'>>({
     operator_id: 1,
     bus_number: '',
     type: 'Express',
     capacity: 40,
     last_maintenance: '',
-    next_maintenance: ''
+    next_maintenance: '',
+    base_fare: 0,
+    per_km_rate: 0,
+    per_stop_rate: 0
   })
   const [editingBus, setEditingBus] = useState<Bus | null>(null)
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null)
@@ -87,28 +90,28 @@ export default function BusesPage() {
 
   const fetchAvailableStaff = async (busId?: number) => {
     try {
-      setStaffLoading(true);
-      const response = await fetch(`/api/available-staff${busId ? `?busId=${busId}` : ''}`);
-      if (!response.ok) throw new Error('Failed to fetch available staff');
-      const data = await response.json();
-      setAvailableStaff(data);
+      setStaffLoading(true)
+      const response = await fetch(`/api/available-staff${busId ? `?busId=${busId}` : ''}`)
+      if (!response.ok) throw new Error('Failed to fetch available staff')
+      const data = await response.json()
+      setAvailableStaff(data)
     } catch (error) {
-      console.error('Error fetching available staff:', error);
-      setAssignmentError('Failed to fetch available staff');
+      console.error('Error fetching available staff:', error)
+      setAssignmentError('Failed to fetch available staff')
     } finally {
-      setStaffLoading(false);
+      setStaffLoading(false)
     }
   }
 
   const fetchCurrentAssignments = async (busId: number) => {
     try {
-      const response = await fetch(`/api/bus-assignments?busId=${busId}`);
-      if (!response.ok) throw new Error('Failed to fetch current assignments');
-      const data = await response.json();
-      return data;
+      const response = await fetch(`/api/bus-assignments?busId=${busId}`)
+      if (!response.ok) throw new Error('Failed to fetch current assignments')
+      const data = await response.json()
+      return data
     } catch (error) {
-      console.error('Error fetching current assignments:', error);
-      return null;
+      console.error('Error fetching current assignments:', error)
+      return null
     }
   }
 
@@ -151,7 +154,10 @@ export default function BusesPage() {
         type: 'Express',
         capacity: 40,
         last_maintenance: '',
-        next_maintenance: ''
+        next_maintenance: '',
+        base_fare: 0,
+        per_km_rate: 0,
+        per_stop_rate: 0
       })
       toast({
         title: "Success",
@@ -225,76 +231,70 @@ export default function BusesPage() {
     }
   }
 
- 
-
-const openAssignStaffDialog = async (bus: Bus) => {
-  setSelectedBus(bus);
-  setIsAssignStaffDialogOpen(true);
-  setStaffLoading(true);
-  
-  try {
-    // Get current assignments first
-    const currentAssignments = await fetchCurrentAssignments(bus.id);
+  const openAssignStaffDialog = async (bus: Bus) => {
+    setSelectedBus(bus)
+    setIsAssignStaffDialogOpen(true)
+    setStaffLoading(true)
     
-    // Then fetch available staff including current assignments
-    await fetchAvailableStaff(bus.id);
+    try {
+      const currentAssignments = await fetchCurrentAssignments(bus.id)
+      await fetchAvailableStaff(bus.id)
 
-    // Set current assignments if they exist
-    if (currentAssignments?.currentAssignments) {
-      setStaffAssignment({
-        driverId: currentAssignments.currentAssignments.driver_id?.toString() || '',
-        conductorId: currentAssignments.currentAssignments.conductor_id?.toString() || '',
-        cleanerId: currentAssignments.currentAssignments.cleaner_id?.toString() || ''
-      });
+      if (currentAssignments?.currentAssignments) {
+        setStaffAssignment({
+          driverId: currentAssignments.currentAssignments.driver_id?.toString() || '',
+          conductorId: currentAssignments.currentAssignments.conductor_id?.toString() || '',
+          cleanerId: currentAssignments.currentAssignments.cleaner_id?.toString() || ''
+        })
+      }
+    } catch (error) {
+      console.error('Error in openAssignStaffDialog:', error)
+      setAssignmentError('Failed to load assignments')
+    } finally {
+      setStaffLoading(false)
     }
-  } catch (error) {
-    console.error('Error in openAssignStaffDialog:', error);
-    setAssignmentError('Failed to load assignments');
-  } finally {
-    setStaffLoading(false);
   }
-};
-
 
   const availableDrivers = availableStaff.filter(s => s.role_name === 'Driver')
   const availableConductors = availableStaff.filter(s => s.role_name === 'Conductor')
   const availableCleaners = availableStaff.filter(s => s.role_name === 'Cleaner')
+
   const handleAssignStaff = async () => {
-  try {
-    setAssignmentError('')
-    const response = await fetch('/api/assign-staff', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        busId: selectedBus?.id,
-        driverId: parseInt(staffAssignment.driverId),
-        conductorId: parseInt(staffAssignment.conductorId),
-        cleanerId: staffAssignment.cleanerId ? parseInt(staffAssignment.cleanerId) : null
-      }),
-    })
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error)
-    }
-    await response.json()
-    setBuses(buses.map(bus => 
-      bus.id === selectedBus?.id ? { ...bus, staff_assigned: true } : bus
-    ))
-    setIsAssignStaffDialogOpen(false)
-    toast({
-      title: "Success",
-      description: "Staff assigned successfully",
-    })
-  } catch (error) {
-    if (error instanceof Error) {
-      setAssignmentError(error.message)
-    } else {
-      setAssignmentError('An unexpected error occurred')
+    try {
+      setAssignmentError('')
+      const response = await fetch('/api/assign-staff', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          busId: selectedBus?.id,
+          driverId: parseInt(staffAssignment.driverId),
+          conductorId: parseInt(staffAssignment.conductorId),
+          cleanerId: staffAssignment.cleanerId ? parseInt(staffAssignment.cleanerId) : null
+        }),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error)
+      }
+      await response.json()
+      setBuses(buses.map(bus => 
+        bus.id === selectedBus?.id ? { ...bus, staff_assigned: true } : bus
+      ))
+      setIsAssignStaffDialogOpen(false)
+      toast({
+        title: "Success",
+        description: "Staff assigned successfully",
+      })
+    } catch (error) {
+      if (error instanceof Error) {
+        setAssignmentError(error.message)
+      } else {
+        setAssignmentError('An unexpected error occurred')
+      }
     }
   }
-}
 
   const filteredBuses = buses.filter(bus =>
     bus.bus_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -424,6 +424,33 @@ const openAssignStaffDialog = async (bus: Bus) => {
                   onChange={(e) => setNewBus({ ...newBus, next_maintenance: e.target.value })}
                 />
               </div>
+              <div>
+                <Label htmlFor="baseFare">Base Fare</Label>
+                <Input
+                  id="baseFare"
+                  type="number"
+                  value={newBus.base_fare}
+                  onChange={(e) => setNewBus({ ...newBus, base_fare: parseFloat(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="perKmRate">Per Km Rate</Label>
+                <Input
+                  id="perKmRate"
+                  type="number"
+                  value={newBus.per_km_rate}
+                  onChange={(e) => setNewBus({ ...newBus, per_km_rate: parseFloat(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="perStopRate">Per Stop Rate</Label>
+                <Input
+                  id="perStopRate"
+                  type="number"
+                  value={newBus.per_stop_rate}
+                  onChange={(e) => setNewBus({ ...newBus, per_stop_rate: parseFloat(e.target.value) })}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button onClick={handleAddBus}>Add Bus</Button>
@@ -469,23 +496,13 @@ const openAssignStaffDialog = async (bus: Bus) => {
                   <Button variant="outline" size="sm" onClick={() => handleDeleteBus(bus.id)}>
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
-                  {/* <Button
+                  <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setSelectedBus(bus)
-                      setIsAssignStaffDialogOpen(true)
-                    }}
+                    onClick={() => openAssignStaffDialog(bus)}
                   >
                     {bus.staff_assigned ? "Reassign Staff" : "Assign Staff"}
-                  </Button> */}
-                  <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openAssignStaffDialog(bus)}
-                    >
-                      {bus.staff_assigned ? "Reassign Staff" : "Assign Staff"}
-                    </Button>
+                  </Button>
                 </div>
               </TableCell>
             </TableRow>
@@ -551,6 +568,33 @@ const openAssignStaffDialog = async (bus: Bus) => {
                   type="date"
                   value={editingBus.next_maintenance}
                   onChange={(e) => setEditingBus({ ...editingBus, next_maintenance: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editBaseFare">Base Fare</Label>
+                <Input
+                  id="editBaseFare"
+                  type="number"
+                  value={editingBus.base_fare}
+                  onChange={(e) => setEditingBus({ ...editingBus, base_fare: parseFloat(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editPerKmRate">Per Km Rate</Label>
+                <Input
+                  id="editPerKmRate"
+                  type="number"
+                  value={editingBus.per_km_rate}
+                  onChange={(e) => setEditingBus({ ...editingBus, per_km_rate: parseFloat(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editPerStopRate">Per Stop Rate</Label>
+                <Input
+                  id="editPerStopRate"
+                  type="number"
+                  value={editingBus.per_stop_rate}
+                  onChange={(e) => setEditingBus({ ...editingBus, per_stop_rate: parseFloat(e.target.value) })}
                 />
               </div>
             </div>
@@ -644,8 +688,6 @@ const openAssignStaffDialog = async (bus: Bus) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-
     </div>
   )
 }
