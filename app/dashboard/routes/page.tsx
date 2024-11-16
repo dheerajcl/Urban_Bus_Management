@@ -325,18 +325,27 @@ export default function RoutesPage() {
 
   const openAssignBusDialog = async (route: Route) => {
     setAssigningRoute(route)
-    if (route.schedule_info?.is_assigned) {
-      await fetchCurrentAssignment(route.id)
-    } else {
-      setBusAssignment({
-        bus_id: 0,
-        departure: null,
-        arrival: null,
-        available_seats: 0
+    try {
+      if (route.schedule_info?.is_assigned) {
+        await fetchCurrentAssignment(route.id)
+      } else {
+        setBusAssignment({
+          bus_id: 0,
+          departure: null,
+          arrival: null,
+          available_seats: 0
+        })
+      }
+      await fetchAvailableBuses(route.id)
+      setIsAssignBusDialogOpen(true)
+    } catch (error) {
+      console.error('Error opening assign bus dialog:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load current assignments. Please try again.",
+        variant: "destructive",
       })
     }
-    await fetchAvailableBuses(route.id)
-    setIsAssignBusDialogOpen(true)
   }
 
   const fetchAvailableBuses = async (routeId: number) => {
@@ -346,7 +355,11 @@ export default function RoutesPage() {
         throw new Error('Failed to fetch available buses')
       }
       const buses = await response.json()
-      setAvailableBuses(buses)
+      // Remove duplicates based on bus id
+      const uniqueBuses = buses.filter((bus: Bus, index: number, self: Bus[]) =>
+        index === self.findIndex((t) => t.id === bus.id)
+      )
+      setAvailableBuses(uniqueBuses)
     } catch (error) {
       console.error('Error fetching available buses:', error)
       toast({
@@ -367,11 +380,11 @@ export default function RoutesPage() {
       setBusAssignment(currentAssignment)
     } catch (error) {
       console.error('Error fetching current assignment:', error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch current assignment. Please try again.",
-        variant: "destructive",
-      })
+      // toast({
+      //   title: "Error",
+      //   description: "Failed to fetch current assignment. Please try again.",
+      //   variant: "destructive",
+      // })
     }
   }
 
@@ -572,7 +585,7 @@ export default function RoutesPage() {
 
       {/* Edit Route Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Route</DialogTitle>
           </DialogHeader>
@@ -604,8 +617,8 @@ export default function RoutesPage() {
                 className="col-span-3"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-stops" className="text-right">Stops</Label>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="edit-stops" className="text-right pt-2">Stops</Label>
               <div className="col-span-3 space-y-2">
                 {editingRoute?.stops.map((stop, index) => (
                   <div key={index} className="flex items-center space-x-2">
@@ -661,8 +674,8 @@ export default function RoutesPage() {
                 </Button>
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-distances" className="text-right">Distances</Label>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="edit-distances" className="text-right pt-2">Distances</Label>
               <div className="col-span-3 space-y-2">
                 {editingRoute?.distances.map((distance, index) => (
                   <div key={index} className="flex items-center space-x-2">
