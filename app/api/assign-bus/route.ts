@@ -30,16 +30,10 @@ export async function POST(request: NextRequest) {
     if (assignmentCheck.rows.length > 0) {
       return NextResponse.json({ message: 'Bus is already assigned to a route' }, { status: 400 })
     }
-
     await query('BEGIN')
 
     try {
-      const scheduleResult = await query(`
-        INSERT INTO schedules (bus_id, route_id, departure, arrival, available_seats)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id
-      `, [bus_id, route_id, departure, arrival, available_seats])
-
+      
       for (const distance of distances) {
         await query(`
           INSERT INTO distances (route_id, from_stop, to_stop, distance_km)
@@ -47,9 +41,16 @@ export async function POST(request: NextRequest) {
         `, [route_id, distance.from_stop, distance.to_stop, distance.distance_km])
       }
 
+      const scheduleResult = await query(`
+        INSERT INTO schedules (bus_id, route_id, departure, arrival, available_seats)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id
+      `, [bus_id, route_id, departure, arrival, available_seats])
+
       // Commit the transaction
       await query('COMMIT')
-
+      
+      await query('SELECT update_all_null_distances()')
       return NextResponse.json({ 
         success: true, 
         schedule_id: scheduleResult.rows[0].id,
