@@ -1,47 +1,84 @@
+// dashboardQueries.ts
+
 import { query } from '@/lib/db'
 
 export async function getDashboardData() {
   const currentDate = new Date().toISOString().split('T')[0]
+  // const yesterdayDate = new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]
   const lastMonthDate = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0]
 
   try {
-    const activeBuses = await query(`
+    // Total Buses
+    const totalBusesResult = await query(`
+      SELECT COUNT(*) as total
+      FROM buses
+    `)
+    const totalBuses = totalBusesResult.rows[0]?.total ?? 0
+
+    // Active Buses
+    const activeBusesResult = await query(`
       SELECT COUNT(DISTINCT b.id) as count 
       FROM buses b
       JOIN schedules s ON b.id = s.bus_id
-      WHERE s.departure >= NOW()
+      WHERE s.departure <= NOW() AND s.arrival >= NOW()
     `)
+    const activeBuses = activeBusesResult.rows[0]?.count ?? 0
 
-    const totalRevenue = await query(`
+    // Bookings Today and Growth Percentage
+    const bookingsResult = await query(`
       SELECT 
-        COALESCE(SUM(CASE WHEN DATE(b.booking_date) = CURRENT_DATE THEN b.total_price ELSE 0 END), 0) as today,
-        COALESCE(SUM(CASE WHEN DATE(b.booking_date) = CURRENT_DATE - INTERVAL '1 month' THEN b.total_price ELSE 0 END), 0) as last_month,
-        ROUND(
-          ((SUM(CASE WHEN DATE(b.booking_date) = CURRENT_DATE THEN b.total_price ELSE 0 END) - 
-            SUM(CASE WHEN DATE(b.booking_date) = CURRENT_DATE - INTERVAL '1 month' THEN b.total_price ELSE 0 END)) / 
-           NULLIF(SUM(CASE WHEN DATE(b.booking_date) = CURRENT_DATE - INTERVAL '1 month' THEN b.total_price ELSE 0 END), 0) * 100
-          )::numeric, 1
-        ) as growth_percentage
-      FROM bookings b
-      WHERE b.booking_date >= CURRENT_DATE - INTERVAL '1 month'
-        AND b.payment_status = 'PENDING'
+        COALESCE(SUM(CASE WHEN DATE(booking_date) = CURRENT_DATE THEN 1 ELSE 0 END), 0) as today,
+        COALESCE(SUM(CASE WHEN DATE(booking_date) = CURRENT_DATE - INTERVAL '1 day' THEN 1 ELSE 0 END), 0) as yesterday,
+        CASE WHEN SUM(CASE WHEN DATE(booking_date) = CURRENT_DATE - INTERVAL '1 day' THEN 1 ELSE 0 END) = 0 THEN 0
+             ELSE ROUND(
+               ((SUM(CASE WHEN DATE(booking_date) = CURRENT_DATE THEN 1 ELSE 0 END) - 
+                 SUM(CASE WHEN DATE(booking_date) = CURRENT_DATE - INTERVAL '1 day' THEN 1 ELSE 0 END)) / 
+                NULLIF(SUM(CASE WHEN DATE(booking_date) = CURRENT_DATE - INTERVAL '1 day' THEN 1 ELSE 0 END), 0) * 100
+               )::numeric, 1)
+        END as growth_percentage
+      FROM bookings
+      WHERE DATE(booking_date) >= CURRENT_DATE - INTERVAL '1 day'
     `)
+    const bookingsToday = bookingsResult.rows[0]?.today ?? 0
+    const bookingsGrowth = bookingsResult.rows[0]?.growth_percentage ?? 0
 
-    const fuelUsage = await query(`
+    // Total Revenue
+    const totalRevenueResult = await query(`
+      SELECT 
+        COALESCE(SUM(CASE WHEN DATE(booking_date) = CURRENT_DATE THEN total_price ELSE 0 END), 0) as today,
+        COALESCE(SUM(CASE WHEN DATE(booking_date) BETWEEN DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day') THEN total_price ELSE 0 END), 0) as last_month,
+        CASE WHEN SUM(CASE WHEN DATE(booking_date) BETWEEN DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day') THEN total_price ELSE 0 END) = 0 THEN 0
+             ELSE ROUND(
+               ((SUM(CASE WHEN DATE(booking_date) = CURRENT_DATE THEN total_price ELSE 0 END) - 
+                 SUM(CASE WHEN DATE(booking_date) BETWEEN DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day') THEN total_price ELSE 0 END)) / 
+                NULLIF(SUM(CASE WHEN DATE(booking_date) BETWEEN DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day') THEN total_price ELSE 0 END), 0) * 100
+               )::numeric, 1)
+        END as growth_percentage
+      FROM bookings
+      WHERE booking_date >= CURRENT_DATE - INTERVAL '1 month'
+        AND payment_status = 'PENDING'
+    `)
+    const totalRevenue = totalRevenueResult.rows[0] ?? { today: 0, last_month: 0, growth_percentage: 0 }
+
+    // Fuel Usage
+    const fuelUsageResult = await query(`
       SELECT 
         COALESCE(SUM(CASE WHEN DATE(fr.date) = CURRENT_DATE THEN fr.fuel_amount ELSE 0 END), 0) as today,
         COALESCE(SUM(CASE WHEN DATE(fr.date) = CURRENT_DATE - INTERVAL '1 day' THEN fr.fuel_amount ELSE 0 END), 0) as yesterday,
-        ROUND(
-          ((SUM(CASE WHEN DATE(fr.date) = CURRENT_DATE THEN fr.fuel_amount ELSE 0 END) - 
-            SUM(CASE WHEN DATE(fr.date) = CURRENT_DATE - INTERVAL '1 day' THEN fr.fuel_amount ELSE 0 END)) / 
-           NULLIF(SUM(CASE WHEN DATE(fr.date) = CURRENT_DATE - INTERVAL '1 day' THEN fr.fuel_amount ELSE 0 END), 0) * 100
-          )::numeric, 1
-        ) as growth_percentage
+        CASE WHEN SUM(CASE WHEN DATE(fr.date) = CURRENT_DATE - INTERVAL '1 day' THEN fr.fuel_amount ELSE 0 END) = 0 THEN 0
+             ELSE ROUND(
+               ((SUM(CASE WHEN DATE(fr.date) = CURRENT_DATE THEN fr.fuel_amount ELSE 0 END) - 
+                 SUM(CASE WHEN DATE(fr.date) = CURRENT_DATE - INTERVAL '1 day' THEN fr.fuel_amount ELSE 0 END)) / 
+                NULLIF(SUM(CASE WHEN DATE(fr.date) = CURRENT_DATE - INTERVAL '1 day' THEN fr.fuel_amount ELSE 0 END), 0) * 100
+               )::numeric, 1)
+        END as growth_percentage
       FROM fuel_records fr
-      WHERE fr.date >= CURRENT_DATE - INTERVAL '1 day'
+      WHERE DATE(fr.date) >= CURRENT_DATE - INTERVAL '1 day'
     `)
+    const fuelUsage = fuelUsageResult.rows[0] ?? { today: 0, yesterday: 0, growth_percentage: 0 }
 
-    const maintenanceAlerts = await query(`
+    // Maintenance Alerts
+    const maintenanceAlertsResult = await query(`
       SELECT 
         COUNT(*) as total,
         COALESCE(SUM(CASE WHEN b.next_maintenance <= CURRENT_DATE + INTERVAL '7 days' THEN 1 ELSE 0 END), 0) as urgent,
@@ -49,31 +86,35 @@ export async function getDashboardData() {
       FROM buses b
       WHERE b.next_maintenance IS NOT NULL
     `)
+    const maintenanceAlerts = maintenanceAlertsResult.rows[0] ?? { total: 0, urgent: 0, routine: 0 }
 
-    const activeRoutes = await query(`
+    // Active Routes
+    const activeRoutesResult = await query(`
       SELECT b.bus_number as bus_no, r.name as route, s.name as driver, 
              sch.departure, sch.arrival,
              CASE 
                WHEN sch.departure > CURRENT_TIMESTAMP THEN 'Scheduled'
-               WHEN sch.departure <= CURRENT_TIMESTAMP AND sch.arrival > CURRENT_TIMESTAMP THEN 'On Route'
+               WHEN sch.departure <= CURRENT_TIMESTAMP AND sch.arrival >= CURRENT_TIMESTAMP THEN 'On Route'
                ELSE 'Completed'
              END as status,
              CASE 
                WHEN sch.departure > CURRENT_TIMESTAMP THEN sch.departure::text
-               WHEN sch.arrival > CURRENT_TIMESTAMP THEN sch.arrival::text
+               WHEN sch.arrival >= CURRENT_TIMESTAMP THEN sch.arrival::text
                ELSE NULL
              END as eta
       FROM schedules sch
       JOIN buses b ON sch.bus_id = b.id
       JOIN routes r ON sch.route_id = r.id
-      JOIN bus_staff_assignments bsa ON b.id = bsa.bus_id
-      JOIN staff s ON bsa.driver_id = s.id
+      LEFT JOIN bus_staff_assignments bsa ON b.id = bsa.bus_id AND bsa.assignment_date = CURRENT_DATE
+      LEFT JOIN staff s ON bsa.driver_id = s.id
       WHERE DATE(sch.departure) = CURRENT_DATE
       ORDER BY sch.departure
       LIMIT 5
-    `)  
+    `)
+    const activeRoutes = activeRoutesResult.rows ?? []
 
-    const staffAvailability = await query(`
+    // Staff Availability
+    const staffAvailabilityResult = await query(`
       SELECT s.name, 
              s.contact_number,
              CASE WHEN bsa.id IS NOT NULL THEN 'On Duty' ELSE 'Available' END as status
@@ -85,16 +126,20 @@ export async function getDashboardData() {
       ORDER BY s.name
       LIMIT 5
     `)
+    const staffAvailability = staffAvailabilityResult.rows ?? []
 
-    const upcomingMaintenance = await query(`
+    // Upcoming Maintenance
+    const upcomingMaintenanceResult = await query(`
       SELECT b.bus_number as bus_no, 'Scheduled Maintenance' as type, b.next_maintenance as date
       FROM buses b
-      WHERE b.next_maintenance > CURRENT_DATE
+      WHERE b.next_maintenance >= CURRENT_DATE
       ORDER BY b.next_maintenance
       LIMIT 3
     `)
+    const upcomingMaintenance = upcomingMaintenanceResult.rows ?? []
 
-    const routePerformance = await query(`
+    // Route Performance
+    const routePerformanceResult = await query(`
       SELECT r.name as route, 
              ROUND(calculate_avg_revenue_per_route(r.id, $1, $2)::numeric, 2) as revenue,
              ROUND(calculate_occupancy_rate(r.id, $1, $2)::numeric, 2) as occupancy,
@@ -103,8 +148,10 @@ export async function getDashboardData() {
       ORDER BY revenue DESC
       LIMIT 3
     `, [currentDate, lastMonthDate])
+    const routePerformance = routePerformanceResult.rows ?? []
 
-    const weeklyRevenue = await query(`
+    // Weekly Revenue
+    const weeklyRevenueResult = await query(`
       WITH RECURSIVE dates AS (
         SELECT CURRENT_DATE - INTERVAL '6 days' as date
         UNION ALL
@@ -119,8 +166,10 @@ export async function getDashboardData() {
       GROUP BY d.date
       ORDER BY d.date
     `)
+    const weeklyRevenue = weeklyRevenueResult.rows ?? []
 
-    const weeklyFuelUsage = await query(`
+    // Weekly Fuel Usage
+    const weeklyFuelUsageResult = await query(`
       WITH RECURSIVE dates AS (
         SELECT CURRENT_DATE - INTERVAL '6 days' as date
         UNION ALL
@@ -135,18 +184,22 @@ export async function getDashboardData() {
       GROUP BY d.date
       ORDER BY d.date
     `)
+    const weeklyFuelUsage = weeklyFuelUsageResult.rows ?? []
 
     return {
-      activeBuses: activeBuses.rows[0]?.count ?? 0,
-      totalRevenue: totalRevenue.rows[0] ?? { today: 0, last_month: 0, growth_percentage: 0 },
-      fuelUsage: fuelUsage.rows[0] ?? { today: 0, yesterday: 0, growth_percentage: 0 },
-      maintenanceAlerts: maintenanceAlerts.rows[0] ?? { total: 0, urgent: 0, routine: 0 },
-      activeRoutes: activeRoutes.rows ?? [],
-      staffAvailability: staffAvailability.rows ?? [],
-      upcomingMaintenance: upcomingMaintenance.rows ?? [],
-      routePerformance: routePerformance.rows ?? [],
-      weeklyRevenue: weeklyRevenue.rows ?? [],
-      weeklyFuelUsage: weeklyFuelUsage.rows ?? []
+      totalBuses,
+      activeBuses,
+      bookingsToday,
+      bookingsGrowth,
+      totalRevenue,
+      fuelUsage,
+      maintenanceAlerts,
+      activeRoutes,
+      staffAvailability,
+      upcomingMaintenance,
+      routePerformance,
+      weeklyRevenue,
+      weeklyFuelUsage,
     }
   } catch (error) {
     console.error('Error fetching dashboard data:', error)

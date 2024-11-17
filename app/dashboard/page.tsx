@@ -1,8 +1,19 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// page.tsx
 
 import { Suspense } from "react"
 import Link from "next/link"
-import { AlertTriangle, ArrowUpRight, Bus, DollarSign, Fuel, BarChart3, Users, Phone } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  Bus,
+  DollarSign,
+  Fuel,
+  BarChart3,
+  Users,
+  Calendar,
+  Wrench,
+  Phone
+} from 'lucide-react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -44,7 +55,7 @@ async function DashboardContent() {
   const revenueChartConfig = {
     revenue: {
       label: "Revenue",
-      color: "hsl(var(--primary))",
+      color: "#6366F1", // Indigo
     },
   }
 
@@ -56,87 +67,143 @@ async function DashboardContent() {
   const fuelUsageChartConfig = {
     fuel_usage: {
       label: "Fuel Usage",
-      color: "hsl(var(--primary))",
+      color: "#10B981", // Emerald
     },
   }
 
   return (
-    <div className="p-6 space-y-6 bg-background">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <Button asChild>
+    <div className="p-6 space-y-8 bg-background">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-4xl font-extrabold tracking-tight">Dashboard</h1>
+        <Button asChild variant="secondary" className="flex items-center">
           <Link href="/reports">
             Generate Reports
-            <ArrowUpRight className="ml-2 h-4 w-4" />
+            <ArrowUpRight className="ml-2 h-5 w-5" />
           </Link>
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="col-span-2 lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+      {/* Small Cards */}
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+        {/* Active Buses */}
+        <Card className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium">Active Buses</CardTitle>
+            <Bus className="h-6 w-6" />
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <div className="text-4xl font-bold">{data.activeBuses}</div>
+            <p className="text-sm opacity-90">
+              {Math.round((data.activeBuses / data.totalBuses) * 100)}% of fleet active
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Bookings Today */}
+        <Card className="bg-gradient-to-br from-blue-500 to-teal-500 text-white shadow-lg">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium">Bookings Today</CardTitle>
+            <Calendar className="h-6 w-6" />
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <div className="text-4xl font-bold">{data.bookingsToday}</div>
+            <p className="text-sm opacity-90">
+              {data.bookingsGrowth >= 0 ? '+' : ''}
+              {data.bookingsGrowth}% from yesterday
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Maintenance Alerts */}
+        <Card className="bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-lg">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium">Maintenance Alerts</CardTitle>
+            <AlertTriangle className="h-6 w-6" />
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <div className="text-4xl font-bold">{data.maintenanceAlerts.total}</div>
+            <p className="text-sm opacity-90">
+              {data.maintenanceAlerts.urgent} urgent, {data.maintenanceAlerts.routine} routine
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Maintenance */}
+        <Card className="bg-gradient-to-br from-gray-500 to-gray-700 text-white shadow-lg">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium">Upcoming Maintenance</CardTitle>
+            <Wrench className="h-6 w-6" />
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <div className="text-4xl font-bold">{data.upcomingMaintenance.length}</div>
+            <p className="text-sm opacity-90">
+              Maintenance scheduled this week
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts */}
+      <div className="grid gap-6 grid-cols-1 xl:grid-cols-3">
+        {/* Total Revenue Chart */}
+        <Card className="shadow-lg xl:col-span-2">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-xl font-semibold">Total Revenue</CardTitle>
+            <DollarSign className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{Number(data.totalRevenue.today).toLocaleString()} today</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-5xl font-bold mb-2">
+              ₹{Number(data.totalRevenue.today).toLocaleString()}
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
               {data.totalRevenue.growth_percentage >= 0 ? '+' : ''}
               {data.totalRevenue.growth_percentage}% from last month
             </p>
-            <div className="h-[200px] mt-4">
+            <div className="h-64">
               <RevenueLineChart data={revenueChartData} config={revenueChartConfig} />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Buses</CardTitle>
-            <Bus className="h-4 w-4 text-muted-foreground" />
+        {/* Fuel Usage Chart */}
+        <Card className="shadow-lg">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-xl font-semibold">Fuel Usage</CardTitle>
+            <Fuel className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.activeBuses}</div>
-            <p className="text-xs text-muted-foreground">
-              {Math.round((data.activeBuses / data.maintenanceAlerts.total) * 100)}% of total fleet
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fuel Usage</CardTitle>
-            <Fuel className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Number(data.fuelUsage.today).toFixed(2)} L today</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-5xl font-bold mb-2">
+              {Number(data.fuelUsage.today).toFixed(2)} L
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
               {data.fuelUsage.growth_percentage >= 0 ? '+' : ''}
               {data.fuelUsage.growth_percentage}% from yesterday
             </p>
-            <div className="h-[200px] mt-4">
+            <div className="h-64">
               <FuelUsageLineChart data={fuelUsageChartData} config={fuelUsageChartConfig} />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-lg font-semibold">Active Routes</CardTitle>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/routes">
+      {/* Additional Sections */}
+      <div className="grid gap-6 grid-cols-1 xl:grid-cols-3">
+        {/* Active Routes */}
+        <Card className="shadow-lg xl:col-span-2">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-xl font-semibold">Active Routes</CardTitle>
+            <Button asChild size="sm" variant="ghost">
+              <Link href="/dashboard/routes">
                 View All
-                <ArrowUpRight className="ml-2 h-4 w-4" />
+                <ArrowUpRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">Bus No.</TableHead>
+                  <TableHead>Bus No.</TableHead>
                   <TableHead>Route</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">ETA</TableHead>
@@ -145,49 +212,18 @@ async function DashboardContent() {
               <TableBody>
                 {data.activeRoutes.map((route, index) => (
                   <TableRow key={index}>
-                    <TableCell className="font-medium">{route.bus_no}</TableCell>
+                    <TableCell>{route.bus_no}</TableCell>
                     <TableCell>{route.route}</TableCell>
                     <TableCell>
-                      <Badge variant={route.status === 'Scheduled' ? 'default' : route.status === 'On Route' ? 'secondary' : 'outline'}>
+                      <Badge variant={
+                        route.status === 'Scheduled' ? 'default' :
+                        route.status === 'On Route' ? 'secondary' : 'outline'
+                      }>
                         {route.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">{route.eta || 'N/A'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-lg font-semibold">Route Performance</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Route</TableHead>
-                  <TableHead>Revenue</TableHead>
-                  <TableHead>Occupancy</TableHead>
-                  <TableHead>Profitability Index</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.routePerformance.map((performance, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{performance.route}</TableCell>
-                    <TableCell>₹{Number(performance.revenue).toLocaleString()}</TableCell>
-                    <TableCell>{Math.round(Number(performance.occupancy))}%</TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        Number(performance.profitability_index) > 1.5 ? 'default' :
-                        Number(performance.profitability_index) > 1 ? 'secondary' : 'destructive'
-                      }>
-                        {Number(performance.profitability_index).toFixed(2)}
-                      </Badge>
+                    <TableCell className="text-right">
+                      {route.eta ? new Date(route.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -195,69 +231,37 @@ async function DashboardContent() {
             </Table>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle>Staff Availability</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+        {/* Staff Availability */}
+        <Card className="shadow-lg">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-xl font-semibold">Staff Availability</CardTitle>
+            <Users className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {data.staffAvailability.map((staff, index) => (
-                <div key={index} className="flex items-center">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={`https://avatar.vercel.sh/${staff.name}.png`} alt={staff.name} />
-                    <AvatarFallback>{staff.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">{staff.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Driver
-                    </p>
-                  </div>
-                  <div className="ml-auto flex items-center">
-                    <Badge variant={staff.status === 'On Duty' ? 'default' : 'secondary'}>
-                      {staff.status}
-                    </Badge>
-                    <Button variant="ghost" size="icon" asChild className="ml-2">
-                      <a href={`tel:${staff.contact_number}`}>
-                        <Phone className="h-4 w-4" />
-                        <span className="sr-only">Call {staff.name}</span>
-                      </a>
-                    </Button>
-                  </div>
+          <CardContent className="space-y-4">
+            {data.staffAvailability.map((staff, index) => (
+              <div key={index} className="flex items-center">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={`https://avatar.vercel.sh/${staff.name}.png`} alt={staff.name} />
+                  <AvatarFallback>{staff.name.slice(0, 2)}</AvatarFallback>
+                </Avatar>
+                <div className="ml-4">
+                  <p className="text-sm font-medium">{staff.name}</p>
+                  <p className="text-xs text-muted-foreground">Driver</p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle>Maintenance Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="flex flex-col space-y-3 p-4 border rounded-lg">
-                <h3 className="text-sm font-medium">Total Alerts</h3>
-                <p className="text-2xl font-bold">{data.maintenanceAlerts.total}</p>
+                <div className="ml-auto flex items-center space-x-2">
+                  <Badge variant={staff.status === 'On Duty' ? 'secondary' : 'outline'}>
+                    {staff.status}
+                  </Badge>
+                  <Button variant="ghost" size="icon" asChild>
+                    <a href={`tel:${staff.contact_number}`}>
+                      <Phone className="h-5 w-5" />
+                      <span className="sr-only">Call {staff.name}</span>
+                    </a>
+                  </Button>
+                </div>
               </div>
-              <div className="flex flex-col space-y-3 p-4 border rounded-lg">
-                <h3 className="text-sm font-medium">Urgent</h3>
-                <p className="text-2xl font-bold text-destructive">{data.maintenanceAlerts.urgent}</p>
-              </div>
-              <div className="flex flex-col space-y-3 p-4 border rounded-lg">
-                <h3 className="text-sm font-medium">Routine</h3>
-                <p className="text-2xl font-bold text-muted-foreground">{data.maintenanceAlerts.routine}</p>
-              </div>
-              <div className="flex flex-col space-y-3 p-4 border rounded-lg">
-                <h3 className="text-sm font-medium">Next Scheduled</h3>
-                <p className="text-2xl font-bold">{data.upcomingMaintenance[0]?.date ? new Date(data.upcomingMaintenance[0].date).toLocaleDateString() : 'N/A'}</p>
-              </div>
-            </div>
+            ))}
           </CardContent>
         </Card>
       </div>
