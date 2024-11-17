@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (assignmentCheck.rows.length > 0) {
       return NextResponse.json({ message: 'Bus is already assigned to a route' }, { status: 400 })
     }
-
+    await query('SELECT update_all_null_distances()')
     await query('BEGIN')
 
     try {
@@ -40,16 +40,15 @@ export async function POST(request: NextRequest) {
         RETURNING id
       `, [bus_id, route_id, departure, arrival, available_seats])
 
-      // Commit the transaction
-      await query('COMMIT')
       
+      await query('COMMIT')
+      await query('SELECT update_all_null_distances()')
       return NextResponse.json({ 
         success: true, 
         schedule_id: scheduleResult.rows[0].id,
         bus_number: bus_number
       })
     } catch (error) {
-      // Rollback the transaction in case of error
       await query('ROLLBACK')
       throw error
     }
