@@ -298,8 +298,8 @@ export default function RoutesPage() {
 
   const handleDeassignBus = async (routeId: number) => {
     try {
-      const response = await fetch(`/api/deassign-bus?routeId=${routeId}`, {
-        method: 'POST',
+      const response = await fetch(`/api/deassign-bus/${routeId}`, {
+        method: 'DELETE',
       })
 
       if (!response.ok) {
