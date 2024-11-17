@@ -85,14 +85,14 @@ export default function DashboardLayout({
           >
             Staff
           </Link>
-          <Link
+          {/* <Link
             href="/dashboard/reports"
             className={`transition-colors hover:text-primary ${
               isActive('/dashboard/reports') ? 'text-primary font-semibold' : 'text-muted-foreground'
             }`}
           >
             Reports
-          </Link>
+          </Link> */}
         </nav>
         <Sheet>
           <SheetTrigger asChild>
@@ -146,14 +146,14 @@ export default function DashboardLayout({
               >
                 Staff
               </Link>
-              <Link
+              {/* <Link
                 href="/dashboard/reports"
                 className={`hover:text-primary ${
                   isActive('/dashboard/reports') ? 'text-primary font-semibold' : 'text-muted-foreground'
                 }`}
               >
                 Reports
-              </Link>
+              </Link> */}
             </nav>
           </SheetContent>
         </Sheet>

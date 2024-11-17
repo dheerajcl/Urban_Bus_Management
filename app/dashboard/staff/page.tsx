@@ -183,7 +183,7 @@ export default function StaffPage() {
               <TableHead>Role</TableHead>
               <TableHead>License Number</TableHead>
               <TableHead>Phone Number</TableHead>
-              <TableHead>Work Rate</TableHead>
+              {/* <TableHead>Work Rate</TableHead> */}
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
