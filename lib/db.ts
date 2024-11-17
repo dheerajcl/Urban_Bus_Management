@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt'
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  options: '-c timezone=Asia/Kolkata'
 })
 
 export async function query(text: string, params?: unknown[]) {
