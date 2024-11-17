@@ -44,6 +44,7 @@ type Bus = {
   base_fare: number
   per_km_rate: number
   per_stop_rate: number
+  mileage: number
 }
 
 type StaffMember = {
@@ -70,7 +71,8 @@ export default function BusesPage() {
     next_maintenance: '',
     base_fare: 0,
     per_km_rate: 0,
-    per_stop_rate: 0
+    per_stop_rate: 0,
+    mileage: 0 
   })
   const [editingBus, setEditingBus] = useState<Bus | null>(null)
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null)
@@ -157,7 +159,8 @@ export default function BusesPage() {
         next_maintenance: '',
         base_fare: 0,
         per_km_rate: 0,
-        per_stop_rate: 0
+        per_stop_rate: 0,
+        mileage: 0 
       })
       toast({
         title: "Success",
@@ -311,6 +314,7 @@ export default function BusesPage() {
               <TableHead>Bus Number</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Capacity</TableHead>
+              <TableHead>Mileage</TableHead>
               <TableHead>Last Maintenance</TableHead>
               <TableHead>Next Maintenance</TableHead>
               <TableHead>Staff Status</TableHead>
@@ -407,6 +411,16 @@ export default function BusesPage() {
                 />
               </div>
               <div>
+                <Label htmlFor="busMileage">Mileage</Label>
+                <Input
+                  id="busMileage"
+                  type="number"
+                  step="0.1"
+                  value={newBus.mileage}
+                  onChange={(e) => setNewBus({ ...newBus, mileage: parseFloat(e.target.value) })}
+                />
+              </div>
+                <div>
                 <Label htmlFor="lastMaintenance">Last Maintenance</Label>
                 <Input
                   id="lastMaintenance"
@@ -464,6 +478,7 @@ export default function BusesPage() {
             <TableHead>Bus Number</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Capacity</TableHead>
+            <TableHead>Mileage</TableHead>
             <TableHead>Last Maintenance</TableHead>
             <TableHead>Next Maintenance</TableHead>
             <TableHead>Staff Status</TableHead>
@@ -476,6 +491,11 @@ export default function BusesPage() {
               <TableCell>{bus.bus_number}</TableCell>
               <TableCell>{bus.type}</TableCell>
               <TableCell>{bus.capacity}</TableCell>
+              <TableCell>
+              {(bus.mileage || bus.mileage === 0) 
+                ? `${Number(bus.mileage).toFixed(2)} kmpl` 
+                : 'N/A'}
+              </TableCell>
               <TableCell>{new Date(bus.last_maintenance).toLocaleDateString()}</TableCell>
               <TableCell>{new Date(bus.next_maintenance).toLocaleDateString()}</TableCell>
               <TableCell>
@@ -550,6 +570,16 @@ export default function BusesPage() {
                   type="number"
                   value={editingBus.capacity}
                   onChange={(e) => setEditingBus({ ...editingBus, capacity: parseInt(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editBusMileage">Mileage</Label>
+                <Input
+                  id="editBusMileage"
+                  type="number"
+                  step="0.01"
+                  value={editingBus.mileage}
+                  onChange={(e) => setEditingBus({ ...editingBus, mileage: parseFloat(e.target.value) })}
                 />
               </div>
               <div>

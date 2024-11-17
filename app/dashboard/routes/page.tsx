@@ -301,27 +301,28 @@ export default function RoutesPage() {
       const response = await fetch(`/api/deassign-bus/${routeId}`, {
         method: 'DELETE',
       })
-
+  
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to deassign bus')
+        throw new Error(errorData.message || 'Failed to de-assign bus')
       }
-
+  
       toast({
         title: "Success",
-        description: "Bus deassigned successfully",
+        description: "Bus de-assigned successfully",
       })
-
+  
       loadRoutes()
     } catch (error) {
-      console.error('Error deassigning bus:', error)
+      console.error('Error de-assigning bus:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to deassign bus. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to de-assign bus. Please try again.",
         variant: "destructive",
       })
     }
   }
+
 
   const openAssignBusDialog = async (route: Route) => {
     setAssigningRoute(route)

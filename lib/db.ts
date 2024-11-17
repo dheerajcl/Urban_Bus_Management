@@ -16,6 +16,7 @@ export async function query(text: string, params?: unknown[]) {
   }
 }
 
+
 export async function authenticateOfficer(username: string, password: string) {
   const result = await query('SELECT * FROM depot_officers WHERE username = $1', [username])
   if (result.rows.length === 0) {
