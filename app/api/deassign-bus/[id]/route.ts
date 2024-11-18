@@ -22,10 +22,6 @@ export async function DELETE(
         throw new Error('No bus assignment found for this route')
       }
 
-      // Delete the distances associated with this route
-      await query('DELETE FROM distances WHERE route_id = $1', [routeId])
-
-      // Commit the transaction
       await query('COMMIT')
 
       return NextResponse.json({ message: 'Bus de-assigned successfully' }, { status: 200 })

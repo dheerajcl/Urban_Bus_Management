@@ -18,7 +18,8 @@ import { format } from 'date-fns'
 import BookingModal from '@/components/BookingModal'
 // import { useAuth } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
-
+import { showErrorToast } from "@/components/ui/toast"
+import { isValidFutureDate } from "@/lib/utils"
 
 export type BusResult = {
   id: number;
@@ -43,6 +44,7 @@ type SocialLink = {
   icon: React.ReactNode
   label: string
 }
+
 
 export default function LandingPage() {
   const { toast } = useToast()
@@ -70,6 +72,7 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (blobRef.current && heroSectionRef.current) {
@@ -95,6 +98,15 @@ export default function LandingPage() {
     localStorage.removeItem('userToken')
     setIsLoggedIn(false)
   }
+
+  const handleDateSelection = (date: Date) => {
+    if (!isValidFutureDate(date)) {
+      showErrorToast("Please select a future date. Past dates are not allowed.");
+      return false;
+    }
+    return true;
+  };
+
 
   const fetchSuggestions = async (term: string, setSuggestions: React.Dispatch<React.SetStateAction<string[]>>) => {
     if (term.length < 2) {
@@ -519,12 +531,24 @@ export default function LandingPage() {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0 bg-zinc-900/90 border-white/20">
-                          <Calendar
+                          {/* <Calendar
                             mode="single"
                             selected={date}
                             onSelect={(day) => day && setDate(day)}
                             initialFocus
                             className="bg-zinc-900 text-white"
+                          /> */}
+                          <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={(day) => {
+                              if (day && handleDateSelection(day)) {
+                                setDate(day);
+                              }
+                            }}
+                            initialFocus
+                            className="bg-zinc-900 text-white"
+                            fromDate={new Date()} // Changed from minDate to fromDate
                           />
                         </PopoverContent>
                       </Popover>
