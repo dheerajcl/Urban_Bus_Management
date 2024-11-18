@@ -165,6 +165,7 @@ export default function BusesPage() {
       toast({
         title: "Success",
         description: "Bus added successfully",
+        className: "bg-green-700 text-white p-2 text-sm",
       })
     } catch (error) {
       console.error('Error adding bus:', error)
@@ -196,6 +197,7 @@ export default function BusesPage() {
       toast({
         title: "Success",
         description: "Bus updated successfully",
+        className: "bg-green-700 text-white p-2 text-sm",
       })
     } catch (error) {
       console.error('Error updating bus:', error)
@@ -223,6 +225,7 @@ export default function BusesPage() {
       toast({
         title: "Success",
         description: "Bus deleted successfully",
+        className: "bg-green-700 text-white p-2 text-sm",
       })
     } catch (error) {
       console.error('Error deleting bus:', error)
@@ -289,6 +292,7 @@ export default function BusesPage() {
       toast({
         title: "Success",
         description: "Staff assigned successfully",
+        className: "bg-green-700 text-white p-2 text-sm",
       })
     } catch (error) {
       if (error instanceof Error) {
@@ -369,7 +373,7 @@ export default function BusesPage() {
               <Plus className="mr-2 h-4 w-4" /> Add New Bus
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-black shadow-lg rounded-md">
             <DialogHeader>
               <DialogTitle>Add New Bus</DialogTitle>
             </DialogHeader>
@@ -530,7 +534,7 @@ export default function BusesPage() {
         </TableBody>
       </Table>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-black shadow-lg rounded-md">
           <DialogHeader>
             <DialogTitle>Edit Bus</DialogTitle>
           </DialogHeader>
@@ -636,7 +640,7 @@ export default function BusesPage() {
       </Dialog>
 
       <Dialog open={isAssignStaffDialogOpen} onOpenChange={setIsAssignStaffDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-black shadow-lg rounded-md">
           <DialogHeader>
             <DialogTitle>
               {selectedBus?.staff_assigned ? 'Reassign' : 'Assign'} Staff to Bus {selectedBus?.bus_number}

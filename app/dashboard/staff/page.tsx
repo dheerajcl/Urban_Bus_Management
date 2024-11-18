@@ -240,7 +240,7 @@ export default function StaffPage() {
               <Plus className="mr-2 h-4 w-4" /> Add New Staff
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="bg-black shadow-lg rounded-md">
             <DialogHeader>
               <DialogTitle>Add New Staff</DialogTitle>
             </DialogHeader>
@@ -342,7 +342,7 @@ export default function StaffPage() {
         </TableBody>
       </Table>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-black shadow-lg rounded-md">
           <DialogHeader>
             <DialogTitle>Edit Staff</DialogTitle>
           </DialogHeader>

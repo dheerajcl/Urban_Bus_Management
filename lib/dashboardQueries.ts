@@ -20,7 +20,7 @@ export async function getDashboardData() {
       SELECT COUNT(DISTINCT b.id) as count 
       FROM buses b
       JOIN schedules s ON b.id = s.bus_id
-      WHERE s.departure <= NOW() AND s.arrival >= NOW()
+      WHERE s.departure >= CURRENT_DATE
     `)
     const activeBuses = activeBusesResult.rows[0]?.count ?? 0
 

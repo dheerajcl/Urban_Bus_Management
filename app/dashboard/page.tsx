@@ -75,12 +75,6 @@ async function DashboardContent() {
     <div className="p-6 space-y-8 bg-background">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-4xl font-extrabold tracking-tight">Dashboard</h1>
-        <Button asChild variant="secondary" className="flex items-center">
-          <Link href="/reports">
-            Generate Reports
-            <ArrowUpRight className="ml-2 h-5 w-5" />
-          </Link>
-        </Button>
       </div>
 
       {/* Small Cards */}

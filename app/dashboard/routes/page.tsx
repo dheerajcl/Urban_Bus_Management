@@ -221,6 +221,7 @@ export default function RoutesPage() {
       toast({
         title: "Success",
         description: "Route updated successfully",
+        className: "bg-green-700 text-white p-2 text-sm",
       })
     } catch (error) {
       console.error('Error updating route:', error)
@@ -244,6 +245,7 @@ export default function RoutesPage() {
       toast({
         title: "Success",
         description: "Route deleted successfully",
+        className: "bg-green-700 text-white p-2 text-sm",
       })
     } catch (error) {
       console.error('Error deleting route:', error)
@@ -282,6 +284,7 @@ export default function RoutesPage() {
       toast({
         title: "Success",
         description: `Bus ${assigningRoute.schedule_info?.is_assigned ? 're' : ''}assigned successfully`,
+        className: "bg-green-700 text-white p-2 text-sm",
       })
 
       setIsAssignBusDialogOpen(false)
@@ -310,6 +313,7 @@ export default function RoutesPage() {
       toast({
         title: "Success",
         description: "Bus de-assigned successfully",
+        className: "bg-green-700 text-white p-2 text-sm",
       })
   
       loadRoutes()
@@ -453,7 +457,7 @@ export default function RoutesPage() {
                           <Pencil className="w-4 h-4 mr-2" /> Edit
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handleDeleteRoute(route.id)}>
-                          <Trash2 className="w-4 h-4 mr-2" /> Delete
+                          <Trash2 className="w-4 h-4 mr-2 text-red-500" /> Delete
                         </Button>
                       </div>
                     </TableCell>
@@ -467,7 +471,7 @@ export default function RoutesPage() {
                               </span>
                             </HoverCardTrigger>
                             <HoverCardContent className="w-80">
-                              <div className="space-y-1">
+                              <div className="space-y-4">
                                 <h4 className="text-sm font-semibold">Assigned Bus Details</h4>
                                 <p className="text-sm">Bus Number: {route.schedule_info.bus_number || 'N/A'}</p>
                                 <p className="text-sm">
@@ -480,7 +484,7 @@ export default function RoutesPage() {
                                     ? format(new Date(route.schedule_info.arrival), "PPP 'at' p")
                                     : 'N/A'}
                                 </p>
-                                <Button variant="outline" size="sm" onClick={() => handleDeassignBus(route.id)}>
+                                <Button variant="destructive" size="sm" onClick={() => handleDeassignBus(route.id)}>
                                   Deassign Bus
                                 </Button>
                               </div>
@@ -508,7 +512,7 @@ export default function RoutesPage() {
       
       {/* Add Route Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-black shadow-lg rounded-md">
           <DialogHeader>
             <DialogTitle>Add New Route</DialogTitle>
           </DialogHeader>
@@ -586,7 +590,7 @@ export default function RoutesPage() {
 
       {/* Edit Route Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-black shadow-lg rounded-md">
           <DialogHeader>
             <DialogTitle>Edit Route</DialogTitle>
           </DialogHeader>
@@ -752,7 +756,7 @@ export default function RoutesPage() {
 
       {/* Assign/Reassign Bus Dialog */}
       <Dialog open={isAssignBusDialogOpen} onOpenChange={setIsAssignBusDialogOpen}>
-        <DialogContent className="sm:max-w-[525px]">
+        <DialogContent className="sm:max-w-[525px] bg-black shadow-lg rounded-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-semibold">
               {assigningRoute?.schedule_info?.is_assigned ? 'Reassign' : 'Assign'} Bus to Route: {assigningRoute?.name}
