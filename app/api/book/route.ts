@@ -39,7 +39,10 @@ export async function POST(request: NextRequest) {
     const expectedAvailableSeats = availableSeats - seats;
     
     // Insert booking
-    await query('INSERT INTO bookings (schedule_id, passenger_name, passenger_email, seats_booked, total_price) VALUES ($1, $2, $3, $4, $5)', [schedule.id, name, email, seats, totalPrice]);
+    await query(
+      'INSERT INTO bookings (schedule_id, route_id, bus_id, passenger_name, passenger_email, seats_booked, total_price) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [schedule.id, routeId, busId, name, email, seats, totalPrice]
+    );
     
     await query('COMMIT');
 
