@@ -64,33 +64,34 @@ SwiftCommute is a comprehensive bus management system designed to optimize route
    npm install
    # or
    yarn install
+   # or
+   pnpm install
    ```
 
 3. Set up environment variables:
    Create a `.env.local` file in the root directory and add the following:
+   Go to [Neon Serverless Postgres](https://neon.tech), create your project, copy your connection string(pooled) and paste it in your .env
    ```
-   DATABASE_URL=postgresql://username:password@localhost:5432/swiftcommute
+   DATABASE_URL=postgresql://neondb_owner:password@aws.neon.tech/neondb?sslmode=require
    ```
 
-4. Set up the database:
+5. Set up the database:
    ```bash
    npm run migrate
    # or
    yarn migrate
    ```
 
-5. Start the development server:
+6. Start the development server:
    ```bash
    npm run dev
    # or
    yarn dev
    ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## API Documentation
 
-API endpoints are documented using Swagger. After starting the development server, visit [http://localhost:3000/api-docs](http://localhost:3000/api-docs) to view the API documentation.
 
 ## Future Improvements
 
