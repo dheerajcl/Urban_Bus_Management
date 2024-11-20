@@ -1,40 +1,41 @@
-# 🚌 SwiftCommute
+# SwiftCommute
 
-[![Next.js](https://img.shields.io/badge/Next.js-13.0%2B-blue?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-18.0%2B-blue?style=flat-square&logo=react)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-4.5%2B-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14.0%2B-blue?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <strong>Streamline your bus management operations with SwiftCommute</strong>
+</p>
 
-SwiftCommute is a comprehensive bus management system designed to streamline route planning, bus assignments, and passenger bookings. With real-time analytics and an intuitive dashboard, SwiftCommute empowers transport companies to optimize their operations and enhance customer satisfaction.
+<p align="center">
+  <a href="https://nextjs.org/">
+    <img src="https://img.shields.io/badge/Next.js-13.0%2B-black?style=flat-square&logo=next.js" alt="Next.js">
+  </a>
+  <a href="https://reactjs.org/">
+    <img src="https://img.shields.io/badge/React-18.0%2B-61DAFB?style=flat-square&logo=react" alt="React">
+  </a>
+  <a href="https://www.typescriptlang.org/">
+    <img src="https://img.shields.io/badge/TypeScript-4.5%2B-3178C6?style=flat-square&logo=typescript" alt="TypeScript">
+  </a>
+  <a href="https://www.postgresql.org/">
+    <img src="https://img.shields.io/badge/PostgreSQL-14.0%2B-4169E1?style=flat-square&logo=postgresql" alt="PostgreSQL">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="License: MIT">
+  </a>
+</p>
 
-## 📑 Table of Contents
+## Overview
 
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [Configuration](#-configuration)
-- [Database Setup](#-database-setup)
-- [Running the Application](#-running-the-application)
-- [API Documentation](#-api-documentation)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Acknowledgements](#-acknowledgements)
+SwiftCommute is a comprehensive bus management system designed to optimize route planning, bus assignments, and passenger bookings. With an intuitive dashboard and powerful features, SwiftCommute empowers transport companies to enhance their operations and improve customer satisfaction.
 
-## 🚀 Features
+## Features
 
-- 🗺️ Route Management: Create, edit, and delete bus routes
-- 🚌 Bus Assignment: Assign and reassign buses to routes with conflict checks
-- 👥 Staff Management: Track driver availability and assignments
-- 🎟️ Booking System: Allow users to book seats on scheduled routes
-- 📊 Real-time Dashboard: Monitor revenue, fuel usage, route performance, and maintenance alerts
-- 📈 Analytics: Calculate profitability index for route performance analysis
-- 📄 PDF Reports: Generate comprehensive reports from the dashboard
-- 📧 Email Reminders: Automated notifications for upcoming bookings
+- **Route Management**: Create, edit, and delete bus routes
+- **Bus Assignment**: Assign and reassign buses to routes with conflict checks
+- **Staff Management**: Track driver availability and assignments
+- **Booking System**: Allow users to book seats on scheduled routes
+- **Real-time Dashboard**: Monitor key performance indicators
+- **Analytics**: Calculate profitability index for route performance
 
-## 💻 Tech Stack
+## Tech Stack
 
 - **Frontend**: React, Next.js, TypeScript
 - **Backend**: Next.js API Routes
@@ -42,12 +43,12 @@ SwiftCommute is a comprehensive bus management system designed to streamline rou
 - **Styling**: Tailwind CSS, shadcn/ui
 - **Charts**: Recharts
 
-## 🏁 Getting Started
+## Getting Started
 
 ### Prerequisites
 
 - Node.js (v14.0+)
-- npm or yarn or pnpm
+- npm or yarn
 - PostgreSQL (v14.0+)
 
 ### Installation
@@ -65,72 +66,49 @@ SwiftCommute is a comprehensive bus management system designed to streamline rou
    yarn install
    ```
 
-## ⚙️ Configuration
-
-1. Create a `.env.local` file in the root directory:
-   ```env
+3. Set up environment variables:
+   Create a `.env.local` file in the root directory and add the following:
+   ```
    DATABASE_URL=postgresql://username:password@localhost:5432/swiftcommute
-   NEXTAUTH_SECRET=your_nextauth_secret
-   NEXTAUTH_URL=http://localhost:3000
-   SMTP_HOST=your_smtp_host
-   SMTP_PORT=your_smtp_port
-   SMTP_USER=your_smtp_username
-   SMTP_PASSWORD=your_smtp_password
    ```
 
-2. Update the values with your specific configuration.
-
-## 🗄️ Database Setup
-
-1. Create a new PostgreSQL database:
-   ```sql
-   CREATE DATABASE swiftcommute;
-   ```
-
-2. Run the database migrations:
+4. Set up the database:
    ```bash
    npm run migrate
    # or
    yarn migrate
    ```
 
-3. (Optional) Seed the database with sample data:
-   ```bash
-   npm run seed
-   # or
-   yarn seed
-   ```
-
-## 🚀 Running the Application
-
-1. Start the development server:
+5. Start the development server:
    ```bash
    npm run dev
    # or
    yarn dev
    ```
 
-2. Open [http://localhost:3000](http://localhost:3000) in your browser.
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 📚 API Documentation
+## API Documentation
 
 API endpoints are documented using Swagger. After starting the development server, visit [http://localhost:3000/api-docs](http://localhost:3000/api-docs) to view the API documentation.
 
-## 🤝 Contributing
+## Future Improvements
+
+- PDF report generation for dashboard data
+- Email notification system for booking reminders and updates
+- Mobile application for on-the-go management
+- Integration with real-time GPS tracking for buses
+- Advanced analytics and machine learning for route optimization
+
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgements
+## Acknowledgements
 
 - [Next.js](https://nextjs.org/)
 - [React](https://reactjs.org/)
@@ -138,11 +116,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - [PostgreSQL](https://www.postgresql.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [shadcn/ui](https://ui.shadcn.com/)
+- [v0 by Vercel](https://v0.dev/)
 - [Recharts](https://recharts.org/)
-- [jsPDF](https://github.com/MrRio/jsPDF)
-- [html2canvas](https://html2canvas.hertzen.com/)
-- [NodeMailer](https://nodemailer.com/)
 
 ---
-
-Made with ❤️ by [Dheeraj](https://github.com/dheerajcl)
