@@ -3,28 +3,29 @@
 <p align="center">
   <strong>Streamline your bus management operations with SwiftCommute</strong>
 </p>
-
 <p align="center">
   <a href="https://nextjs.org/">
-    <img src="https://img.shields.io/badge/Next.js-13.0%2B-black?style=flat-square&logo=next.js" alt="Next.js">
+    <img src="https://img.shields.io/badge/Next.js-13.0+-000000?style=for-the-badge&logo=next.js&logoColor=white&labelColor=black" alt="Next.js">
   </a>
   <a href="https://reactjs.org/">
-    <img src="https://img.shields.io/badge/React-18.0%2B-61DAFB?style=flat-square&logo=react" alt="React">
+    <img src="https://img.shields.io/badge/React-18.0+-61DAFB?style=for-the-badge&logo=react&logoColor=black&labelColor=61DAFB" alt="React">
   </a>
   <a href="https://www.typescriptlang.org/">
-    <img src="https://img.shields.io/badge/TypeScript-4.5%2B-3178C6?style=flat-square&logo=typescript" alt="TypeScript">
+    <img src="https://img.shields.io/badge/TypeScript-4.5+-3178C6?style=for-the-badge&logo=typescript&logoColor=white&labelColor=3178C6" alt="TypeScript">
   </a>
   <a href="https://www.postgresql.org/">
-    <img src="https://img.shields.io/badge/PostgreSQL-14.0%2B-4169E1?style=flat-square&logo=postgresql" alt="PostgreSQL">
+    <img src="https://img.shields.io/badge/PostgreSQL-14.0+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white&labelColor=4169E1" alt="PostgreSQL">
   </a>
   <a href="https://opensource.org/licenses/MIT">
-    <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="License: MIT">
+    <img src="https://img.shields.io/badge/License-MIT-F7DF1E?style=for-the-badge&logo=opensourceinitiative&logoColor=black&labelColor=F7DF1E" alt="License: MIT">
   </a>
 </p>
 
 ## Overview
 
 SwiftCommute is a comprehensive bus management system designed to optimize route planning, bus assignments, and passenger bookings. With an intuitive dashboard and powerful features, SwiftCommute empowers transport companies to enhance their operations and improve customer satisfaction.
+
+![Overview](./public/images/napkin-selection.png)
 
 ## Features
 
