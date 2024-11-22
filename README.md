@@ -25,7 +25,7 @@
 
 SwiftCommute is a comprehensive bus management system designed to optimize route planning, bus assignments, and passenger bookings. With an intuitive dashboard and powerful features, SwiftCommute empowers transport companies to enhance their operations and improve customer satisfaction.
 
-![Overview](./public/images/napkin-selection.png)
+![Overview](./public/images/system_integration.png)
 
 ## Features
 
